@@ -77,12 +77,14 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
             if(!$luks->exists())
                 continue;
             $result[] = [
-                "devicefile"            => $luks->getDeviceFile(),
-                "uuid"                  => $luks->getUuid(),
-                "size"                  => $luks->getSize(),
-                "unlocked"              => $luks->isOpen(),
-                "decrypteddevicefile"   => $luks->getDecryptedDeviceFile(),
-                "usedslots"             => $luks->getUsedKeySlots()
+                "devicefile"                => $luks->getDeviceFile(),
+                "uuid"                      => $luks->getUuid(),
+                "size"                      => $luks->getSize(),
+                "devicelinks"               => $luks->getDeviceFileSymlinks(),
+                "unlocked"                  => $luks->isOpen(),
+                "decrypteddevicefile"       => $luks->getDecryptedDeviceFile(),
+                "devicemappername"          => $luks->getDeviceMapperName(),
+                "usedslots"                 => $luks->getUsedKeySlots()
             ];
         }
         return $result;

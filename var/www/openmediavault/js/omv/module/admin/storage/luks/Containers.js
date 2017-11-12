@@ -34,6 +34,7 @@
 // require("js/omv/window/Execute.js")
 // require("js/omv/workspace/window/TextArea.js")
 
+
 /**
  * @class OMV.module.admin.storage.luks.container.Create
  * @derived OMV.workspace.window.Form
@@ -1029,6 +1030,126 @@ Ext.define("OMV.module.admin.storage.luks.container.Detail", {
 });
 
 
+Ext.define("OMV.module.admin.storage.luks.container.Register", {
+    extend: "OMV.window.Window",
+    requires: [
+        "OMV.form.Panel",
+        'OMV.form.field.plugin.FieldInfo',
+        'OMV.workspace.window.plugin.ConfigObject'
+    ],
+    // rpcService: "LuksMgmt",
+    // rpcGetMethod: "setContainerInDatabase",
+    title: _("Register the container in crypttab and database"),
+    // width: 600,
+    // height: 500
+    width: 450,
+    layout: "fit",
+    modal: true,
+    buttonAlign: "center",
+
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        /**
+         * @event success
+         * Fires after the installation has been finished successful.
+         * @param this The window object.
+         * @param response The response from the form submit action.
+         */
+    },
+
+    initComponent: function() {
+        var me = this;
+        Ext.apply(me, {
+            buttons: [{
+                text: _("OK"),
+                handler: me.onOkButton,
+                scope: me
+            },{
+                text: _("Cancel"),
+                handler: me.onCancelButton,
+                scope: me
+            }],
+            items: [ me.fp = Ext.create("OMV.form.Panel", {
+                bodyPadding: "5 5 0",
+                items: [{
+                    xtype: "checkbox",
+                    name: "enable",
+                    fieldLabel: _("Register in crypttab"),
+                    checked: false
+                },{
+                    xtype: "textfield",
+                    name: "uuid",
+                    fieldLabel: _("UUID"),
+                    allowBlank: false,
+                    readOnly: true,
+                    value: me.params.uuid
+                },{
+                    xtype: "textfield",
+                    name: "Key",
+                    fieldLabel: _("Key file path"),
+                    allowBlank: false
+                },{
+                    xtype: "textfield",
+                    name: "name",
+                    id: "name",
+                    fieldLabel: _("Mapped name"),
+                    value: me.params.devicemappername,
+                    /*This field is then disabled for when the disk is mounted (referenced into omv internal db)*/
+                    readOnly   : (me.params._used == true),
+                    boxLabel: _("This is the mapped name you want to assign when the device is unlocked (ie: /dev/mapper/MyLUKSdeviceNAME)"),
+                    qtip1: "The device mapped name cannot be changed if the crypto device is referenced in the internal openmediavualt database",
+                    qtip2: "This device name won't be abled to get changed after is being mounted and registered by omv",
+                    listeners: {
+                        render: function(c) {
+                            if (me.params._used == true) {
+                                Ext.QuickTips.register({
+                                    target: c.getEl(),
+                                    text: c.qtip1
+                                });
+                            } else {
+                                Ext.QuickTips.register({
+                                    target: c.getEl(),
+                                    text: c.qtip2
+                                });
+                            };
+                        }
+                    }
+                }]
+            }) ]
+        });
+        me.callParent(arguments);
+    },
+
+    onCancelButton: function() {
+        this.close();
+    },
+
+    onOkButton: function() {
+        var me = this;
+        var basicForm = me.fp.getForm();
+        OMV.MessageBox.show({
+            title: _("Confirmation"),
+            msg: _("Do you really want to add this device to crypttab?"),
+            buttons: Ext.Msg.YESNO,
+            fn: function(answer) {
+                if(answer === "no")
+                    return;
+                me.doSubmit.call(me);
+            },
+            scope: me,
+            icon: Ext.Msg.QUESTION
+        });
+    },
+
+    doSubmit: function() {
+        var me = this;
+        me.callParent(arguments);
+    }
+
+});
+
+
 /**
  * @class OMV.module.admin.storage.luks.container.RestoreHeader
  * @derived OMV.window.Upload
@@ -1238,7 +1359,8 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
         "OMV.module.admin.storage.luks.container.SingleKey",
         "OMV.module.admin.storage.luks.container.DualKey",
         "OMV.module.admin.storage.luks.container.KillSlot",
-        "OMV.module.admin.storage.luks.container.RestoreHeader"
+        "OMV.module.admin.storage.luks.container.RestoreHeader",
+        "OMV.module.admin.storage.luks.container.Register"
     ],
 
     autoReload: true,
@@ -1255,6 +1377,13 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             sortable: true,
             dataIndex: "devicefile",
             stateId: "devicefile"
+        },{
+            xtype: "devicefilescolumn",
+            text: _("Device Symlinks"),
+            sortable: false,
+            hidden: true,
+            dataIndex: "devicelinks",
+            stateId: "devicelinks"
         },{
             xtype: "binaryunitcolumn",
             text: _("Size"),
@@ -1320,6 +1449,23 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             }
         },{
             xtype: "textcolumn",
+            text: _("Registered"),
+            sortable: true,
+            dataIndex: "_used",
+            hidden: true,
+            stateId: "registered",
+            renderer: function(value, metaData, record) {
+                if (!record.get("unlocked")) {
+                    // Not unlocked so we don't know if the
+                    // decrypted device is used or not
+                    value = _("n/a");
+                } else {
+                    value = OMV.util.Format.boolean(value);
+                }
+                return Ext.String.htmlEncode(value);
+            }
+        },{
+            xtype: "textcolumn",
             text: _("LUKS UUID"),
             hidden: true,
             sortable: true,
@@ -1358,6 +1504,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                         { name: "size", type: "string" },
                         { name: "unlocked", type: "boolean" },
                         { name: "decrypteddevicefile", type: "string" },
+                        { name: "devicemappername", type: "string" },
                         { name: "_used", type: "boolean" }
                     ]
                 }),
@@ -1479,9 +1626,9 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                         }],
                 listeners: {
                     scope: me,
-          click: function(menu, item, e, eOpts) {
+                    click: function(menu, item, e, eOpts) {
                         this.onHeaderButton(item.value);
-          }
+                    }
                 }
             })
         },{
@@ -1493,6 +1640,35 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             handler: me.onDetailButton,
             scope: me,
             disabled: true
+        },{
+            id: me.getId() + "-database",
+            xtype: "splitbutton",
+            text: _("Database"),
+            icon: "images/database.svg",
+            iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
+            disabled: true,
+            handler: function() {
+                this.showMenu();
+            },
+            menu: Ext.create("Ext.menu.Menu", {
+                items: [{
+                            text: _("Register"),
+                            value: "register",
+                            icon: "images/add.svg",
+                            iconCls: Ext.baseCSSPrefix + "btn-icon-16x16"
+                        },{
+                            text: _("Delete"),
+                            value: "unregister",
+                            icon: "images/delete.svg",
+                            iconCls: Ext.baseCSSPrefix + "btn-icon-16x16"
+                        }],
+                listeners: {
+                    scope: me,
+                    click: function(menu, item, e, eOpts) {
+                        this.onDatabaseButton(item.value);
+                    }
+                }
+            })
         }]);
         return items;
     },
@@ -1507,7 +1683,9 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             "lock": true,
             "keys": true,
             "detail": true,
-            "header": true
+            "header": true,
+            "register": true,
+            "database": true
         };
         if (records.length <= 0) {
             tbarBtnDisabled["delete"] = true;
@@ -1516,6 +1694,8 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             tbarBtnDisabled["keys"] = true;
             tbarBtnDisabled["detail"] = true;
             tbarBtnDisabled["header"] = true;
+            tbarBtnDisabled["register"] = true;
+            tbarBtnDisabled["database"] = true;
         } else if(records.length == 1) {
             var record = records[0];
             // Set default values.
@@ -1525,6 +1705,8 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             tbarBtnDisabled["keys"] = false;
             tbarBtnDisabled["detail"] = false;
             tbarBtnDisabled["header"] = false;
+            tbarBtnDisabled["register"] = false;
+            tbarBtnDisabled["database"] = false;
             // Disable/enable the unlock/lock buttons depending on whether
             // the selected device is open.
             if (true === record.get("unlocked")) {
@@ -1852,7 +2034,48 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                 }
             }
         });
+    },
+
+    onDatabaseButton: function(action) {
+        var me = this;
+        var record = me.getSelected();
+        var uuid = record.get("uuid");
+        switch(action) {
+            case "register":
+                Ext.create("OMV.module.admin.storage.luks.container.Register", {
+                    params: {
+                        devicefile:             record.get("devicefile"),
+                        uuid:                   record.get("uuid"),
+                        decrypteddevicefile:    record.get("decrypteddevicefile"),
+                        _used:                  record.get("_used"),
+                        devicemappername:       record.get('devicemappername') 
+                    },
+                    listeners: {
+                        scope: me,
+                        success: function(wnd, response) {
+                            this.doReload();
+                        }
+                    }
+                }).show();
+                break;
+            case "unregister":
+                OMV.MessageBox.show({
+                    title: _("Confirmation"),
+                    msg: _("Do you really want to unregister the device?"),
+                    buttons: Ext.Msg.YESNO,
+                    fn: function(answer) {
+                        if(answer === "no")
+                            return;
+                        me.doSubmit.call(me);
+                    },
+                    scope: me,
+                    icon: Ext.Msg.QUESTION
+                });
+                break;
+        }
     }
+
+
 });
 
 
