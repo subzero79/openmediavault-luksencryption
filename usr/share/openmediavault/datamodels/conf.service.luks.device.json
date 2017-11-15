@@ -1,0 +1,33 @@
+{
+	"type": "config",
+	"id": "conf.service.luks.device",
+	"title": "LUKS Crypttab device",
+	"queryinfo": {
+		"xpath": "//services/luks/crypttab/device",
+		"iterable": true,
+		"idproperty": "uuid"
+	},
+	"properties": {
+		"uuid": {
+			"type": "string",
+			"default": ""
+		},	
+		"enable": {
+			"type": "boolean",
+			"default": false
+		},		
+		"luksuuid": {
+			"type": "string",
+			"format": "uuidv4",
+			"default": ""
+		},
+		"keyfilename": {
+			"type": "string",
+			"default": ""
+		},
+		"name": {
+			"type": "string",
+			"default": ""
+		}
+	}
+}

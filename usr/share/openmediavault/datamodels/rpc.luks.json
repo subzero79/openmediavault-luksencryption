@@ -1,5 +1,67 @@
 [{
 	"type": "rpc",
+	"id": "rpc.luks.setsettings",
+	"params": {
+		"type": "object",
+		"properties": {
+			"enable": {
+				"type": "boolean",
+				"default": false,
+				"required": true
+			},
+			"devicefile": {
+				"type": "string",
+				"default": ""
+			},
+			"uuid": {
+				"type": "string",
+				"default": ""
+			},
+			"isencrypted": {
+				"type": "boolean",
+				"default": false
+			},
+			"description": {
+				"type": "string",
+				"default": ""
+			},
+			"predictable": {
+				"type": "string",
+				"default": ""
+			}
+		}
+	}
+},{
+	"type": "rpc",
+	"id": "rpc.luks.setcrypttab",
+	"params": {
+		"type": "object",
+		"properties": {
+			"uuid": {
+				"type": "string",
+				"default": ""
+			},
+			"enable": {
+				"type": "boolean",
+				"default": false
+			},		
+			"luksuuid": {
+				"type": "string",
+				"format": "uuidv4",
+				"default": ""
+			},
+			"keyfilename": {
+				"type": "string",
+				"default": ""
+			},
+			"name": {
+				"type": "string",
+				"default": ""
+			}
+		}
+	}
+},{
+	"type": "rpc",
 	"id": "rpc.luks.devicefile",
 	"params": {
 		"type": "object",

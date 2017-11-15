@@ -20,6 +20,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use Exception;
+use OMV\Config\ConfigObject;
+use OMV\Config\Database;
+use OMV\Rpc\Rpc;
+use OMV\Rpc\ServiceAbstract;
+use OMV\System\Filesystem\Filesystem;
+use OMV\System\Storage\Backend\DM;
+
+
 class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
 
     private $mountOnUnlock = TRUE;
@@ -54,6 +63,10 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->registerMethod("killContainerKeySlot");
         $this->registerMethod("backupContainerHeader");
         $this->registerMethod("restoreContainerHeader");
+        $this->registerMethod("setAdvancedSettings");
+        $this->registerMethod("getAdvancedSettings");
+        $this->registerMethod("getKeyDevices");
+        $this->registerMethod("setContainerInCrypttab");
     }
 
     /**
@@ -74,6 +87,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         foreach($devs as $devk => $devv) {
             // Get the container details.
             $luks = new \OMV\System\Storage\Luks\Container($devv);
+            // print_r($luks);
             if(!$luks->exists())
                 continue;
             $result[] = [
@@ -827,4 +841,118 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 $e->getMessage()));
         }
     }
+
+    public function getAdvancedSettings($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Get the configuration object.
+        $db = \OMV\Config\Database::getInstance();
+        $object = $db->get("conf.service.luks");
+        // Remove useless properties from the object.
+        return $object->getAssoc();
+
+    }
+
+    public function setAdvancedSettings($params, $context)
+    {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.luks.setsettings");
+        // Get the existing configuration object.
+        $db = \OMV\Config\Database::getInstance();
+        $object = $db->get("conf.service.luks");
+        $object->setAssoc($params);
+        $db->set($object);
+        // Return the configuration object.
+        return $object->getAssoc();
+    }
+
+    public function getKeyDevices($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, [
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ]);
+
+        $this->validateMethodParams($params, 'rpc.common.getlist');
+        // Get all filesystem lists
+        $fs = Rpc::call('FileSystemMgmt', 'getList', $params, $context);
+        // print_r($fs);
+        $res1 = [];
+        foreach ($fs['data'] as $fsk => $fsv) {
+            // Exclude the rootfs
+            if (\OMV\System\System::isRootDeviceFile($fsv['devicefile']))
+                continue;
+            $storagedevice = \OMV\System\Storage\StorageDevice::getStorageDevice($fsv['devicefile']);
+            $parentstoragedevice = \OMV\System\Storage\StorageDevice::getStorageDevice($fsv['parentdevicefile']);
+            // Exclude filesystems that are in the db.  
+            $db = \OMV\Config\Database::getInstance();
+            if (TRUE === $db->exists("conf.system.filesystem.mountpoint", [
+                  "operator" => "stringEquals",
+                  "arg0" => "dir",
+                  "arg1" => $fsv['mountpoint']
+              ]))
+                continue;
+            // Need to exclude devicemapper files
+            $dm = new \OMV\System\Storage\Backend\DM();
+            if (TRUE === $dm->isTypeOf($fsv['devicefile']))
+                continue;
+
+            // Get the first ammount of devices to select
+            $res1[] = [
+                "devicefile"    => $fsv['devicefile'],
+                "uuid"          => $fsv['uuid'],
+                "isencrypted"   => FALSE,
+                "description"   => $parentstoragedevice->getDescription(),
+                "predictable"   => $storagedevice->getPredictableDeviceFile()
+                ];
+        }
+
+        // Get all possible luks available devices
+        $luksdevs = $this->callMethod("getContainersList", $params, $context);
+        $res2 = [];
+        foreach ($luksdevs['data'] as $luksdevk => $luksdevv) {
+            // We need to exclude referenced fs here
+            if ($luksdevv['_used'] == TRUE)
+                continue;
+            $storagedevice = \OMV\System\Storage\StorageDevice::getStorageDevice($luksdevv['devicefile']);
+            $description = "LUKS-DEVICE " . $storagedevice->getDescription();
+            $res2[] = [
+                "devicefile"    => $luksdevv['devicefile'],
+                "uuid"          => $luksdevv['uuid'],
+                "isencrypted"   => TRUE,
+                "description"   => $description,
+                "predictable"   => $storagedevice->getPredictableDeviceFile()
+                ];
+        }
+
+        // print_r($res1);
+        $result = [];
+        $result = array_merge($res1, $res2);
+
+        return $result;
+    }
+
+    public function setContainerInCrypttab($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.luks.setcrypttab");
+        // Prepare the configuration object.
+        print_r($params);
+        $object = new \OMV\Config\ConfigObject("conf.service.luks.device");
+        $object->setAssoc($params);
+        // Set the configuration object.
+        $isNew = $object->isNew();
+        $db = \OMV\Config\Database::getInstance();
+        print_r($db);
+        if (TRUE === $isNew) {
+            // Check uniqueness - Shared folder
+            $db->assertIsUnique($object, "luksuuid");
+        }
+        $db->set($object);
+        // Return the configuration object.
+        return $object->getAssoc();
+    }
+
 }

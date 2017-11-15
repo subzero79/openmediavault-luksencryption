@@ -1,0 +1,66 @@
+{
+	"type": "config",
+	"id": "conf.service.luks",
+	"title": "LUKS",
+	"queryinfo": {
+		"xpath": "//services/luks",
+		"iterable": false
+	},
+	"properties": {
+		"enable": {
+			"type": "boolean",
+			"default": false
+		},
+		"devicefile": {
+			"type": "string",
+			"default": ""
+		},
+		"uuid": {
+			"type": "string",
+			"default": ""
+		},
+		"isencrypted": {
+			"type": "boolean",
+			"default": false
+		},
+		"description": {
+			"type": "string",
+			"default": ""
+		},
+		"predictable": {
+			"type": "string",
+			"default": ""
+		},
+		"crypttab": {
+			"type": "object",
+			"properties": {
+				"device": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"uuid": {
+								"type": "string",
+								"default": ""
+							},
+							"enable": {
+								"type": "boolean",
+								"default": false
+							},
+							"luksuuid": {
+								"type": "string",
+								"format": "uuidv4"
+							},
+							"keyfilename": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
