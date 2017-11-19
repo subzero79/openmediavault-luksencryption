@@ -29,17 +29,20 @@
  * @class OMV.module.admin.service.luks.Settings
  * @derived OMV.workspace.form.Panel
  */
-Ext.define("OMV.module.admin.storage.luks.Settings", {
+Ext.define("OMV.module.admin.storage.luks.CrypttabForm", {
 	extend: "OMV.workspace.form.Panel",
 	requires: [
 		"OMV.data.Store",
 		"OMV.data.Model",
 		"OMV.data.proxy.Rpc"
 	],
-
+    id: "luksCrypttabForm",
 	rpcService: "LuksMgmt",
 	rpcGetMethod: "getAdvancedSettings",
 	rpcSetMethod: "setAdvancedSettings",
+    stateful: true,
+    stateId: "24eb8cc1-3b30-48d0-9309-f278a3ad42f1",
+    alias: "widget.luksCrypttabForm",
 
 	getFormItems : function() {
 		var me = this;
@@ -54,19 +57,49 @@ Ext.define("OMV.module.admin.storage.luks.Settings", {
 				name: "enable",
 				fieldLabel: _("Enable"),
 				checked: false,
-				boxLabel: _("Advanced headless decryption mode")
+				boxLabel: _("Activate before-decrypt.target"),
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("Activating this will prevent all services (except SSH) from starting at boot. \
+                    	After ssh login you can decrypt your drives with omv-decrypt-luks command as root. This will parse  \
+                    	all devices in /etc/crypttab. Once decryption is finished, the server will mount all drives, activate all systemd services \
+                    	until it reaches multi.-user.target. This will also add the noauto flag to every fstab line created by openmediavault \
+                    	Drives will no longer be mounted at boot, but just using the decryption script supplied by the plugin.")
+                }]
+			},{
+				xtype: "checkbox",
+				name: "enablekeydevice",
+				fieldLabel: _("Storage device"),
+				checked: false,
+				boxLabel: _("Use a external storage device to hold the decryption keys. The file name keys must be set in crypttab"),
+	            listeners: {
+	                change: function(cb, checked) {
+	                    Ext.getCmp('devicefile').setDisabled(!checked);
+	                }
+	            },
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("The file name keys must be set in crypttab, and must reside in the root of the filesystem.")
+                }]
 			},{
 				xtype: "combo",
 				name: "devicefile",
+				id: "devicefile",
 				fieldLabel: _("Key device"),
 				emptyText: _("Select a device ..."),
 				allowBlank: false,
 				allowNone: true,
 				editable: false,
-				boxLabel: _("Block device containing the keys"),
+				boxLabel: _("Block device containing the keys."),
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("Make sure the filesystem is supported by linux. If the device is encrypted you will need to log into the   \
+                     		 console via ssh to unlock this device.")
+                }],
 				triggerAction: "all",
 				displayField: "description",
 				valueField: "devicefile",
+				disabled: true,
 				triggers: {
 					search: {
 						cls: Ext.baseCSSPrefix + "form-search-trigger",
@@ -162,10 +195,3 @@ Ext.define("OMV.module.admin.storage.luks.Settings", {
 	}
 });
 
-OMV.WorkspaceManager.registerPanel({
-	id: "settings",
-	path: "/storage/luks",
-	text: _("Advanced Settings"),
-	position: 20,
-	className: "OMV.module.admin.storage.luks.Settings"
-});

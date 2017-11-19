@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author    Volker Theile <volker.theile@openmediavault.org>
+# @author    OpenMediaVault Plugin Developers <plugins@omv-extras.org>
+# @copyright Copyright (c) 2009-2015 Volker Theile
+# @copyright Copyright (c) 2015-2017 OpenMediaVault Plugin Developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://linux.die.net/man/8/cryptsetup
+# http://linux.die.net/man/5/crypttab
+# https://gitlab.com/cryptsetup/cryptsetup
+
+# set -x
+
+. /etc/default/openmediavault-luksencryption
+
+# KEYDEVICE=no
+# KEYDEVICE_ENCRYPTED=no
+# KEYDEVICE_DEV_PATH=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi4-part1
+# KEYDEVICE_MNT_PATH=/mnt/keydevice_e07f98de-ef7a-4558-ac86-5071397fa118
+# KEYDEVICE_UUID=e07f98de-ef7a-4558-ac86-5071397fa118
+
+_check_luks_key_device_is_open ()
+{
+        test -b /dev/disk/by-id/dm-uuid-*$(cryptsetup luksUUID "${1}" | tr -d -)* && status=0 || status=1
+        case $status in
+                0) echo "${1} is open"
+                ;;
+                1) echo "${1} is not open"
+                ;;
+        esac
+}
+
+_start_full_system () {
+	echo "Proceeding to decrypt drives"
+	systemctl start decrypt.target
+	echo "Decryption of drives finished, starting multi-user.target"
+}
+
+if [ "${KEYDEVICE}" == "no" ];then
+	_start_full_system
+fi
+
+if [ "${KEYDEVICE}" == "yes" ];then
+	case $KEYDEVICE_ENCRYPTED in
+		"no")
+			if [ ! -d ${KEYDEVICE_MNT_PATH} ];then
+				echo "Creating temporary mount point for key device at ${KEYDEVICE_MNT_PATH}"
+				mkdir -v ${KEYDEVICE_MNT_PATH}
+			fi
+			echo "Mounting ${KEYDEVICE_DEV_PATH} at ${KEYDEVICE_MNT_PATH}"
+			mount ${KEYDEVICE_DEV_PATH} ${KEYDEVICE_MNT_PATH}
+			if [ "$?" -eq 0 ];then
+				_start_full_system
+			else
+				echo "Mounting failed of ${KEYDEVICE_DEV_PATH}"
+			fi
+			;;
+		"yes")
+			if [ ! -d ${KEYDEVICE_MNT_PATH} ];then
+				echo "Creating temporary mount point for key device at ${KEYDEVICE_MNT_PATH}"
+				mkdir ${KEYDEVICE_MNT_PATH}
+			fi
+			cryptsetup luksOpen ${KEYDEVICE_DEV_PATH} keydevice
+			_check_luks_key_device_is_open "${KEYDEVICE_UUID}" keydevice
+			if [ $? -eq 0 ];then
+				echo "Mounting /dev/mapper/keydevice at ${KEYDEVICE_MNT_PATH}"
+				mount /dev/mapper/keydevice ${KEYDEVICE_MNT_PATH}
+				_start_full_system
+			else
+				echo "Opening the encrypted key device failed..."
+			fi
+			sleep 5 
+			umount -l -f "${KEYDEVICE_MNT_PATH}"
+			cryptsetup luksClose keydevice
+	esac
+fi 
+
+

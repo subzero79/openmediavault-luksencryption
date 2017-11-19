@@ -9,6 +9,10 @@
 				"default": false,
 				"required": true
 			},
+			"enablekeydevice": {
+				"type": "boolean",
+				"default": false
+			},
 			"devicefile": {
 				"type": "string",
 				"default": ""
@@ -41,17 +45,21 @@
 				"type": "string",
 				"default": ""
 			},
+			"devicefile": {
+				"type": "string",
+				"default": ""
+			},
 			"enable": {
 				"type": "boolean",
 				"default": false
 			},		
+			"keyfilename": {
+				"type": "string",
+				"default": ""
+			},
 			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
-				"default": ""
-			},
-			"keyfilename": {
-				"type": "string",
 				"default": ""
 			},
 			"name": {
@@ -100,7 +108,7 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
 				"required": true
@@ -122,9 +130,8 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
-				"format": "uuidv4",
 				"required": true
 			},
 			"devicefile": {
@@ -148,7 +155,7 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
 				"required": true
@@ -182,7 +189,7 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
 				"required": true
@@ -212,7 +219,7 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
 				"required": true
@@ -236,7 +243,7 @@
 	"params": {
 		"type": "object",
 		"properties": {
-			"uuid": {
+			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
 				"required": true

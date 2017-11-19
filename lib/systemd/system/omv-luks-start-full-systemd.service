@@ -1,0 +1,9 @@
+[Unit]
+Description=Start full system after decryption
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+After=decrypt.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/systemctl is-active --quiet decrypt.target
+ExecStart=/bin/systemctl --no-block start multi-user.target

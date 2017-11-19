@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author    Volker Theile <volker.theile@openmediavault.org>
+# @author    OpenMediaVault Plugin Developers <plugins@omv-extras.org>
+# @copyright Copyright (c) 2009-2015 Volker Theile
+# @copyright Copyright (c) 2015-2017 OpenMediaVault Plugin Developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://linux.die.net/man/8/cryptsetup
+# http://linux.die.net/man/5/crypttab
+# https://gitlab.com/cryptsetup/cryptsetup
+
+set -e
+
+. /etc/default/openmediavault
+. /usr/share/openmediavault/scripts/helper-functions
+
+OMV_LUKS_CRYPTDISKS_DEFAULT=${OMV_LUKS_CRYPTDISKS_DEFAULT:-"/etc/default/cryptdisks"}
+OMV_LUKS_CRYPTTAB_CONFIG=${OMV_LUKS_CRYPTTAB_CONFIG:-"/etc/crypttab"}
+OMV_LUKS_DM="conf.service.luks"
+OMV_FSTAB_MNTENT_DM="conf.system.filesystem.mountpoint"
+
+
+
+_add_noauto () {
+## fstab_nna are fstab entries without noauto in extra options
+fstab_nna=( $(omv-confdbadm read ${OMV_FSTAB_MNTENT_DM} | jq -r '.[]|select(.opts | contains ("noauto")| not)|.uuid') )
+
+# Iterate over each mntent object
+for uuid in ${fstab_nna[@]};do
+	fstab_entry=$(omv-confdbadm read --uuid ${uuid} ${OMV_FSTAB_MNTENT_DM})
+	fstab_opts=$(echo $fstab_entry | jq -r '.opts')
+	fstab_new_opts="noauto,"$fstab_opts
+	fstab_new_entry=$(echo $fstab_entry | jq -r --arg opts $fstab_new_opts '.opts|=$opts')
+	# Update each mntent configuration object with new fstab options
+	omv-confdbadm update ${OMV_FSTAB_MNTENT_DM} "${fstab_new_entry}"
+done
+}
+
+_remove_noauto () {
+## fstab_na are fstab entries with noauto in extra options
+fstab_na=( $(omv-confdbadm read ${OMV_FSTAB_MNTENT_DM} | jq -r '.[]|select(.opts | contains ("noauto") ) |.uuid' ) )
+for uuid in ${fstab_na[@]};do
+	fstab_entry=$(omv-confdbadm read --uuid ${uuid} ${OMV_FSTAB_MNTENT_DM})
+	fstab_opts=$(echo $fstab_entry | jq -r '.opts')
+	fstab_new_opts=${fstab_opts/noauto/}
+	fstab_new_opts=${fstab_new_opts/#,/}
+	fstab_new_opts=${fstab_new_opts/%,/}
+	fstab_new_opts=${fstab_new_opts/,,/}
+	fstab_new_entry=$(echo $fstab_entry | jq -r --arg opts $fstab_new_opts '.opts|=$opts')
+	# echo $fstab_new_opts
+	# Update each mntent configuration object with new fstab options
+	omv-confdbadm update ${OMV_FSTAB_MNTENT_DM} "${fstab_new_entry}"
+done
+}
+
+before_decrypt_enable=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.enable')
+
+
+case $before_decrypt_enable in
+	"true")
+		_add_noauto
+		;;
+	"false")
+		_remove_noauto
+		;;
+esac
+
+
+## Regenerate /etc/fstab
+omv-mkconf fstab

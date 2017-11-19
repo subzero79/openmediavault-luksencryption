@@ -11,18 +11,22 @@
 		"uuid": {
 			"type": "string",
 			"default": ""
-		},	
+		},
+		"devicefile": {
+			"type": "string",
+			"default": ""
+		},
 		"enable": {
 			"type": "boolean",
 			"default": false
 		},		
+		"keyfilename": {
+			"type": "string",
+			"default": ""
+		},
 		"luksuuid": {
 			"type": "string",
 			"format": "uuidv4",
-			"default": ""
-		},
-		"keyfilename": {
-			"type": "string",
 			"default": ""
 		},
 		"name": {

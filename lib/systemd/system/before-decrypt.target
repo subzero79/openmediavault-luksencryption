@@ -1,0 +1,7 @@
+[Unit]
+Description=System before Decryption
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+Requires=basic.target
+Conflicts=rescue.service rescue.target
+After=basic.target rescue.service rescue.target
+AllowIsolate=yes

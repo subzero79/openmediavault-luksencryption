@@ -66,7 +66,10 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->registerMethod("setAdvancedSettings");
         $this->registerMethod("getAdvancedSettings");
         $this->registerMethod("getKeyDevices");
-        $this->registerMethod("setContainerInCrypttab");
+        $this->registerMethod("setCrypttabDevice");
+        $this->registerMethod("getCrypttabDevice");
+        $this->registerMethod("deleteCrypttabDevice");
+        $this->registerMethod("getCrypttabList");
     }
 
     /**
@@ -92,7 +95,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 continue;
             $result[] = [
                 "devicefile"                => $luks->getDeviceFile(),
-                "uuid"                      => $luks->getUuid(),
+                "luksuuid"                  => $luks->getUuid(),
                 "size"                      => $luks->getSize(),
                 "devicelinks"               => $luks->getDeviceFileSymlinks(),
                 "unlocked"                  => $luks->isOpen(),
@@ -123,6 +126,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->validateMethodParams($params, "rpc.common.getlist");
         // Enumerate all LUKS containers on the system.
         $containers = $this->callMethod("enumerateContainers", NULL, $context);
+        $crypttabreg = $this->callMethod("getCrypttabList", $params, $context)['data'];
         foreach($containers as $luksk => &$luksv) {
             $used = (!$luksv['unlocked']) ? NULL : FALSE;
             // If open, does the container contain a filesystem and is it known
@@ -135,6 +139,15 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
             }
             // null if locked, otherwise true if used, false if not
             $luksv['_used'] = $used;
+            // Check for crypttab registration
+            $crypttabregistration = FALSE;
+            foreach ($crypttabreg as $crypttabregk => $crypttabregv) {
+                if ($crypttabregv['luksuuid'] == $luksv['luksuuid']) {
+                    $crypttabregistration = TRUE;
+                }
+            }
+            $luksv['crypttabregistration'] = $crypttabregistration;
+
         }
         // Filter result.
         return $this->applyFilter($containers,
@@ -818,7 +831,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
             );
             $this->exec($cmd, $output);
             $header_uuid = $output[0];
-            if($header_uuid !== $params['uuid']) {
+            if($header_uuid !== $params['luksuuid']) {
                 throw new \OMV\Exception(
                     sprintf(gettext("The UUID of the LUKS header backup file ".
                             "doesn't match the device. If you are sure you ".
@@ -826,7 +839,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                             "again with the 'force' option enabled.".PHP_EOL.
                             "Target device UUID:".PHP_EOL." %s".PHP_EOL.
                             "Header backup UUID:".PHP_EOL." %s"),
-                            $params['uuid'],
+                            $params['luksuuid'],
                             $header_uuid
                            ));
             }
@@ -842,6 +855,12 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         }
     }
 
+    /**
+     * Get advanced settings
+     * @param params The method parameters.
+     * @param context The context of the caller.
+     * @return The requested configuration object.
+     */
     public function getAdvancedSettings($params, $context) {
         // Validate the RPC caller context.
         $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
@@ -853,6 +872,19 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
 
     }
 
+    /**
+     * Set advanced settings
+     * @param params An array containing the following fields:
+     *     \em enable Enable the advanced mode.
+     *     \em devicefile The device path of the device that will contain the keys
+     *     \em uuid The filesystem uuid to use when mounting the device
+     *     \em filename The original name of the file.
+     *     \em isencrypted If the device is encrypted.
+     *     \em predictable The device file predictable path
+     *     \em description String containing the devicefile path, size and label (if it has)
+     * @param context The context of the caller.
+     * @return The stored configuration object.
+     */
     public function setAdvancedSettings($params, $context)
     {
         // Validate the RPC caller context.
@@ -868,6 +900,19 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         return $object->getAssoc();
     }
 
+
+    /**
+     * Get all the available non-referenced block devices that the user will select as block device 
+     * for decryption keys. 
+     * @param params An array containing the following fields:
+     *     \em devicefile The device path of the device that will contain the keys
+     *     \em uuid The filesystem uuid to use when mounting the device
+     *     \em isencrypted If the device is encrypted.
+     *     \em predictable The device file predictable path.
+     *     \em description String containing the devicefile path, size and label (if it has)
+     * @param context The context of the caller.
+     * @return The stored configuration object.
+     */
     public function getKeyDevices($params, $context) {
         // Validate the RPC caller context.
         $this->validateMethodContext($context, [
@@ -919,7 +964,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
             $description = "LUKS-DEVICE " . $storagedevice->getDescription();
             $res2[] = [
                 "devicefile"    => $luksdevv['devicefile'],
-                "uuid"          => $luksdevv['uuid'],
+                "uuid"          => $luksdevv['luksuuid'],
                 "isencrypted"   => TRUE,
                 "description"   => $description,
                 "predictable"   => $storagedevice->getPredictableDeviceFile()
@@ -933,19 +978,29 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         return $result;
     }
 
-    public function setContainerInCrypttab($params, $context) {
+
+    public function getCrypttabDevice($params, $context) {
         // Validate the RPC caller context.
         $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams($params, "rpc.luks.setcrypttab");
         // Prepare the configuration object.
-        print_r($params);
+        $db = \OMV\Config\Database::getInstance();
+        return $db->getAssoc("conf.service.luks.device", $params['uuid']);
+    }
+
+
+    public function setCrypttabDevice($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.luks.setcrypttab");
+        // Prepare the configuration object.
         $object = new \OMV\Config\ConfigObject("conf.service.luks.device");
         $object->setAssoc($params);
         // Set the configuration object.
         $isNew = $object->isNew();
         $db = \OMV\Config\Database::getInstance();
-        print_r($db);
         if (TRUE === $isNew) {
             // Check uniqueness - Shared folder
             $db->assertIsUnique($object, "luksuuid");
@@ -954,5 +1009,39 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         // Return the configuration object.
         return $object->getAssoc();
     }
+
+    public function deleteCrypttabDevice($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.common.objectuuid");
+        // Get the configuration object.
+        $db = \OMV\Config\Database::getInstance();
+        $object = $db->get("conf.service.luks.device", $params['uuid']);
+        $db->delete($object);
+        // Return the deleted configuration object.
+        return $object->getAssoc();
+    }
+
+    public function getCrypttabList($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.common.getlist");
+        // Get the configuration object.
+        $db = \OMV\Config\Database::getInstance();
+        $objects = $db->get("conf.service.luks.device");
+        // Add additional share informations.
+        $objectsAssoc = [];
+        // print_r($objects);
+        foreach ($objects as $objectk => &$objectv) {
+            $objectsAssoc[] = $objectv->getAssoc();
+        }
+        // Filter the result.
+        return $this->applyFilter($objectsAssoc, $params['start'],
+          $params['limit'], $params['sortfield'], $params['sortdir']);
+    }
+
+
 
 }

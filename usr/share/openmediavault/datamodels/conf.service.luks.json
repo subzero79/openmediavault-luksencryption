@@ -11,6 +11,10 @@
 			"type": "boolean",
 			"default": false
 		},
+		"enablekeydevice": {
+			"type": "boolean",
+			"default": false
+		},
 		"devicefile": {
 			"type": "string",
 			"default": ""
@@ -43,16 +47,20 @@
 								"type": "string",
 								"default": ""
 							},
+							"devicefile": {
+								"type": "string",
+								"default": ""
+							},
 							"enable": {
 								"type": "boolean",
 								"default": false
 							},
+							"keyfilename": {
+								"type": "string"
+							},
 							"luksuuid": {
 								"type": "string",
 								"format": "uuidv4"
-							},
-							"keyfilename": {
-								"type": "string"
 							},
 							"name": {
 								"type": "string"
