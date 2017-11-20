@@ -31,6 +31,7 @@ set -e
 
 OMV_LUKS_CRYPTDISKS_DEFAULT=${OMV_LUKS_CRYPTDISKS_DEFAULT:-"/etc/default/cryptdisks"}
 OMV_LUKS_CRYPTTAB_CONFIG=${OMV_LUKS_CRYPTTAB_CONFIG:-"/etc/crypttab"}
+OMV_SF_DM="conf.system.sharedfolder"
 OMV_LUKS_DM="conf.service.luks"
 OMV_LUKS_DEVICE_DM="conf.service.luks.device"
 OMV_FSTAB_MNTENT_DM="conf.system.filesystem.mountpoint"
@@ -46,16 +47,30 @@ Requires=before-decrypt.target
 After=before-decrypt.target
 Conflicts=systemd-ask-password-console.path systemd-ask-password-console.service systemd-ask-password-plymouth.path systemd-ask-password-plymouth.service
 EOF
+	
+### Get all cryptodevices in crypttab and put them in the decrypt target as dependancy
 	for i in ${omv_luks_crypttab_devices[@]};do
 		echo "Requires=systemd-cryptsetup@`systemd-escape --suffix "service" --path $i`" >> "${OMV_LUKS_DECRYPT_TARGET}"
 	done
+
+### Get all openmediavault fstab mount points and put them in the decrypt target as dependancy
 	for i in ${omv_systemd_mnt_points[@]};do
 		echo "Requires=`systemd-escape --suffix "mount" --path $i`" >> "${OMV_LUKS_DECRYPT_TARGET}"
 	done
+
+### Get all sharedfolder systemd bind mount units, disable them and add them to the decrypt target as dependancy
+	for name in ${sf_names[@]};do
+		sf_unit="sharedfolders-"`systemd-escape --suffix "mount" --path $name`
+		# systemctl disable "${sf_unit}"
+		echo "Requires=${sf_unit}" >> "${OMV_LUKS_DECRYPT_TARGET}"
+	done
+
+### Add systemd service unit that will trigger full system start
 	echo "Requires=omv-luks-start-full-systemd.service" >> "${OMV_LUKS_DECRYPT_TARGET}"
 }
 
-
+sf_all=$(omv-confdbadm read ${OMV_SF_DM})
+sf_names=( $(echo ${sf_all} | jq -r '.[]|.name') )
 luks_settings_enable=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.|.enable')
 
 case "${luks_settings_enable}" in
@@ -74,9 +89,20 @@ case "${luks_settings_enable}" in
 		if [ -f ${OMV_LUKS_DECRYPT_TARGET} ]; then
 			rm -rf ${OMV_LUKS_DECRYPT_TARGET}
 		fi
+		for name in ${sf_names[@]};do
+			sf_unit="sharedfolders-"`systemd-escape --suffix "mount" --path $name`
+			systemctl enable "${sf_unit}"
+		done
 		systemctl set-default graphical.target
 		;;
 esac
+
+
+### process all sharedfolders systemd bind units and disabling them
+
+
+
+
 
 
 

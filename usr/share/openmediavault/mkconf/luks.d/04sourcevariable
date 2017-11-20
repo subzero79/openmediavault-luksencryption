@@ -26,6 +26,8 @@
 
 set -e
 
+
+### This script will generate default variables to be source by the decryption/unlock script by the plugin
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 

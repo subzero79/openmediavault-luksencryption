@@ -30,11 +30,54 @@
     }
 
     /**
-     * Defines the modules that if present should start before the service
+     * Defines the modules that if present should build their configuration
+     * before the service provided by this module.
+     * @return An array of modules.
+     */
+    public function shouldApply() { return [ "systemd" ]; }
+
+
+    /**
+     * Defines the modules that if present should be applied before the service
      * provided by this module.
      * @return An array of modules.
      */
-    public function shouldStart() { return [ "email" ]; }
+    public function shouldStart() { return [ "systemd", "sharedfolders", "email" ]; }
+
+
+
+    public function startService() {
+        $db = \OMV\Config\Database::getInstance();
+        $objectluks = $db->get("conf.service.luks");
+        if (TRUE !== $objectluks->get("enable"))
+            return;
+        $objects = $db->get("conf.system.sharedfolder");
+        print("XXXXXX start XXXXXXXX");
+        foreach ($objects as $objectk => $objectv) {
+            $unitName = \OMV\System\SystemCtl::escape(build_path(
+                DIRECTORY_SEPARATOR,
+                \OMV\Environment::get("OMV_SHAREDFOLDERS_DIR"),
+                $objectv->get("name")), [ "--path", "--suffix=mount" ]);
+            // Mount the shared folder bind mount.
+            $systemCtl = new \OMV\System\SystemCtl($unitName);
+            $systemCtl->disable(TRUE);
+        }
+    }
+
+/*    public function stopService() {
+        $db = \OMV\Config\Database::getInstance();
+        $objects = $db->get("conf.system.sharedfolder");
+        print("XXXX STOP XXXXXX");
+        foreach ($objects as $objectk => $objectv) {
+            $unitName = \OMV\System\SystemCtl::escape(build_path(
+                DIRECTORY_SEPARATOR,
+                \OMV\Environment::get("OMV_SHAREDFOLDERS_DIR"),
+                $objectv->get("name")), [ "--path", "--suffix=mount" ]);
+            // Mount the shared folder bind mount.
+            $systemCtl = new \OMV\System\SystemCtl($unitName);
+            $systemCtl->enable($now=TRUE);
+        }
+    }*/
 
     /**
      * Generate the configuration.
@@ -86,6 +129,10 @@
         $dispatcher->addListener(
             OMV_NOTIFY_MODIFY | OMV_NOTIFY_CREATE | OMV_NOTIFY_DELETE,
             "org.openmediavault.conf.system.filesystem.mountpoint",
+            [ $this, "setDirty" ]);
+        $dispatcher->addListener(
+            OMV_NOTIFY_MODIFY | OMV_NOTIFY_CREATE | OMV_NOTIFY_DELETE,
+            "org.openmediavault.conf.system.sharedfolder",
             [ $this, "setDirty" ]);
     }
 }
