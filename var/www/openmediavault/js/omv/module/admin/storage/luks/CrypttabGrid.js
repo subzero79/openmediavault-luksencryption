@@ -155,6 +155,7 @@ Ext.define("OMV.module.admin.storage.luks.device", {
             xtype: "textfield",
             name: "name",
             id: "devicemappername",
+            readOnly   : (me.uuid !== OMV.UUID_UNDEFINED),
             fieldLabel: _("Mapped name"),
             /*This field is then disabled for when the disk is mounted (referenced into omv internal db)*/
             // readOnly   : (me._used !== true),
