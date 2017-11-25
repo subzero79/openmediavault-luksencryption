@@ -36,6 +36,7 @@ OMV_LUKS_DM="conf.service.luks"
 OMV_LUKS_DEVICE_DM="conf.service.luks.device"
 OMV_FSTAB_MNTENT_DM="conf.system.filesystem.mountpoint"
 OMV_LUKS_DECRYPT_TARGET="/etc/systemd/system/decrypt.target"
+OMV_LUKS_SYSTEMD_UNIT_PREFIX="/etc/systemd/system/openmediavault-luks-"
 
 _generate_decrypt_target ()
 {
@@ -98,13 +99,33 @@ case "${luks_settings_enable}" in
 esac
 
 
-### process all sharedfolders systemd bind units and disabling them
+luks_settings_enable_keydevice=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.|.enablekeydevice')
+luks_settings_keydevice_encrypted=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.|.isencrypted')
 
+if [ "${luks_settings_enable_keydevice}" == "true" ] && [ "${luks_settings_keydevice_encrypted}" == "false" ];then
+	echo "YES"
+	luks_settings_keydevice_uuid=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.|.uuid')
+	luks_settings_keydevice_predictable=$(omv-confdbadm read ${OMV_LUKS_DM} | jq -r '.|.predictable')
+	unitfile="${OMV_LUKS_SYSTEMD_UNIT_PREFIX}""${luks_settings_keydevice_uuid//-/}".service
+	devicefile=$(systemd-escape --suffix "device" --path ${luks_settings_keydevice_predictable})
 
+# echo ${devicefile}
+# echo "${unitfile}"
 
+	cat << EOF > ${unitfile}
+[Unit]
+Description=Auto run script
+BindsTo=${devicefile}
+After=${devicefile}
+Requisite=${devicefile}
 
+[Service]
+Type=oneshot
+RemainAfterExit=false
+ExecStart=/usr/sbin/omv-luks-start
 
-
-
-
-
+[Install]
+WantedBy=${devicefile}
+EOF
+	
+fi

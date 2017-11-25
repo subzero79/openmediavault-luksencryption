@@ -27,6 +27,21 @@
 // require("js/omv/data/Model.js")
 // require("js/omv/data/proxy/Rpc.js")
 // require("js/omv/form/field/SharedFolderComboBox.js")
+// require("js/omv/WorkspaceManager.js")
+// require("js/omv/workspace/grid/Panel.js")
+// require("js/omv/workspace/window/Form.js")
+// require("js/omv/workspace/window/Grid.js")
+// require("js/omv/workspace/window/plugin/ConfigObject.js")
+// require("js/omv/Rpc.js")
+// require("js/omv/data/Store.js")
+// require("js/omv/data/Model.js")
+// require("js/omv/data/proxy/Rpc.js")
+// require("js/omv/data/Download.js")
+// require("js/omv/window/Window.js")
+// require("js/omv/form/Panel.js")
+// require("js/omv/util/Format.js")
+// require("js/omv/window/Execute.js")
+
 
 Ext.define("OMV.module.admin.storage.luks.device", {
     extend : "OMV.workspace.window.Form",
@@ -42,6 +57,10 @@ Ext.define("OMV.module.admin.storage.luks.device", {
         ptype : "configobject"
     }],
     alias: "widget.luksCrypttabGrid",
+    keyFileUrl: "uploadextra.php",
+    options: {
+        secureDeletion: true
+    },
 
     getFormItems: function() {
         var me = this;
@@ -52,7 +71,7 @@ Ext.define("OMV.module.admin.storage.luks.device", {
             fieldLabel: "Block Device",
             allowBlank: false,
             valueField: "devicefile",
-            displayField: "devicefile",
+            displayField: "description",
             allowEdit: false,
             store: Ext.create("OMV.data.Store", {
                 autoLoad: true,
@@ -64,7 +83,8 @@ Ext.define("OMV.module.admin.storage.luks.device", {
                         { name: "uuid", type: "string" },
                         { name: "size", type: "boolean" },
                         { name: "devicemappername", type: "string" },
-                        { name: "_used", type: "boolean" }
+                        { name: "_used", type: "boolean" },
+                        { name: "description", type: "string" }
                     ]
                 }),
                 proxy: {

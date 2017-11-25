@@ -101,7 +101,8 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 "unlocked"                  => $luks->isOpen(),
                 "decrypteddevicefile"       => $luks->getDecryptedDeviceFile(),
                 "devicemappername"          => $luks->getDeviceMapperName(),
-                "usedslots"                 => $luks->getUsedKeySlots()
+                "usedslots"                 => $luks->getUsedKeySlots(),
+                "description"               => $luks->getDescription()
             ];
         }
         return $result;
