@@ -87,9 +87,9 @@ Ext.define("OMV.module.admin.storage.luks.CrypttabForm", {
 				id: "devicefile",
 				fieldLabel: _("Key device"),
 				emptyText: _("Select a device ..."),
-				allowBlank: false,
+				allowBlank: true,
+				value: "",
 				allowNone: true,
-				editable: false,
 				boxLabel: _("Block device containing the keys."),
                 plugins: [{
                     ptype: "fieldinfo",
@@ -173,22 +173,34 @@ Ext.define("OMV.module.admin.storage.luks.CrypttabForm", {
 				xtype: "textfield",
 				name: "description",
 				fieldLabel: _("Descriptions"),
+				allowBlank: true,
+				value: "",
+				allowNone: true,
 				hidden: true
 
 			},{
 				xtype: "checkbox",
 				name: "isencrypted",
 				fieldLabel: _("Encrypted"),
+				allowBlank: true,
+				value: "",
+				allowNone: true,
 				hidden: true
 			},{
 				xtype: "textfield",
 				name: "predictable",
 				fieldLabel: _("Predictable"),
+				allowBlank: true,
+				value: "",
+				allowNone: true,
 				hidden: true,
 			},{
 				xtype: "textfield",
 				name: "uuid",
 				fieldLabel: _("UUID"),
+				allowBlank: true,
+				value: "",
+				allowNone: true,
 				hidden: true
 			}]
 		}];

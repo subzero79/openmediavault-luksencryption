@@ -1394,7 +1394,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             align: "center",
             renderer: function(value, metaData, record) {
                 var iconCls;
-                switch (record.get("unlockatboot")) {
+                switch (record.get("crypttabregistration")) {
                 case 1:
                 case true: // Device is in crypttab
                     iconCls = (true == value) ?
