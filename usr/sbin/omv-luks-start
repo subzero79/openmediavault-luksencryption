@@ -34,6 +34,30 @@
 # KEYDEVICE_MNT_PATH=/mnt/keydevice_e07f98de-ef7a-4558-ac86-5071397fa118
 # KEYDEVICE_UUID=e07f98de-ef7a-4558-ac86-5071397fa118
 
+
+_cleanup() {
+    case $KEYDEVICE_ENCRYPTED in
+    	no)	
+			umount -l -f ${KEYDEVICE_MNT_PATH}
+			if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
+				echo "Removing the mount directory"
+				rm -rf ${KEYDEVICE_MNT_PATH}
+			else
+				echo "Directory not empty"
+			fi
+		;;
+		"yes")
+			umount -l -f ${KEYDEVICE_MNT_PATH}
+			if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
+				echo "Removing the mount directory"
+				rm -rf ${KEYDEVICE_MNT_PATH}
+			else
+				echo "Directory not empty"
+			fi
+    exit
+}
+trap _cleanup 0 1 2 5 15
+
 _check_luks_key_device_is_open ()
 {
         test -b /dev/disk/by-id/dm-uuid-*$(cryptsetup luksUUID "${1}" | tr -d -)* && status=0 || status=1
