@@ -317,6 +317,9 @@ class Container extends \OMV\System\Storage\StorageDevice {
      */
     private function generateDecryptedName() {
         $dev = $this->getDeviceName();
+        // print($dev);
+        // $dev = $this->getPredictableDeviceFile();
+        // print($dev1);
         $dev = preg_replace("/^mapper\//", "", $dev);
         return str_replace("/", "-", $dev);
     }

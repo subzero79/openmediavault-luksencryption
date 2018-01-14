@@ -36,24 +36,13 @@
 
 
 _cleanup() {
-    case $KEYDEVICE_ENCRYPTED in
-    	no)	
-			umount -l -f ${KEYDEVICE_MNT_PATH}
-			if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
-				echo "Removing the mount directory"
-				rm -rf ${KEYDEVICE_MNT_PATH}
-			else
-				echo "Directory not empty"
-			fi
-		;;
-		"yes")
-			umount -l -f ${KEYDEVICE_MNT_PATH}
-			if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
-				echo "Removing the mount directory"
-				rm -rf ${KEYDEVICE_MNT_PATH}
-			else
-				echo "Directory not empty"
-			fi
+	umount -l -f ${KEYDEVICE_MNT_PATH}
+	if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
+		echo "Removing the mount directory"
+		rm -rf ${KEYDEVICE_MNT_PATH}
+	else
+		echo "Directory not empty"
+	fi
     exit
 }
 trap _cleanup 0 1 2 5 15
@@ -108,8 +97,7 @@ if [ "${KEYDEVICE}" == "yes" ];then
 			else
 				echo "Opening the encrypted key device failed..."
 			fi
-			sleep 5 
-			umount -l -f "${KEYDEVICE_MNT_PATH}"
+			sleep 5
 			cryptsetup luksClose keydevice
 	esac
 fi 
