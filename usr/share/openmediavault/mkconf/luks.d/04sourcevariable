@@ -24,7 +24,7 @@
 # http://linux.die.net/man/5/crypttab
 # https://gitlab.com/cryptsetup/cryptsetup
 
-set -x
+set -e
 
 
 ### This script will generate default variables to be source by the decryption/unlock script by the plugin

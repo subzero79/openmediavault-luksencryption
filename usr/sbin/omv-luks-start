@@ -66,7 +66,12 @@ _start_full_system () {
 		systemctl start zfs.target
 	fi
 	systemctl start decrypt.target
-	echo "Decryption of drives finished, starting multi-user.target"
+	echo "Decryption of drives finished, starting top mount disks"
+	if [ "$ZFS" = "yes" ];then
+		echo "ZFS filesytem presents, initiating zfs.target"
+		systemctl start zfs.target
+	fi
+	systemctl start "luks-mount.target"
 }
 
 if [ "${KEYDEVICE}" == "no" ];then
