@@ -44,6 +44,7 @@ _cleanup() {
 		echo "Directory not empty"
 	fi
     exit
+	cryptsetup luksClose keydevice
 }
 trap _cleanup 0 1 2 5 15
 
@@ -60,6 +61,10 @@ _check_luks_key_device_is_open ()
 
 _start_full_system () {
 	echo "Proceeding to decrypt drives"
+	if [ "$ZFS" = "yes" ];then
+		echo "ZFS filesytem presents, initiating zfs.target"
+		systemctl start zfs.target
+	fi
 	systemctl start decrypt.target
 	echo "Decryption of drives finished, starting multi-user.target"
 }
@@ -98,7 +103,6 @@ if [ "${KEYDEVICE}" == "yes" ];then
 				echo "Opening the encrypted key device failed..."
 			fi
 			sleep 5
-			cryptsetup luksClose keydevice
 	esac
 fi 
 

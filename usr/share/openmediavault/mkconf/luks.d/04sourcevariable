@@ -24,7 +24,7 @@
 # http://linux.die.net/man/5/crypttab
 # https://gitlab.com/cryptsetup/cryptsetup
 
-set -e
+set -x
 
 
 ### This script will generate default variables to be source by the decryption/unlock script by the plugin
@@ -45,6 +45,16 @@ keydevice_predictable=$(echo "${luks_settings}" | jq -r '.|.predictable')
 if [ -f ${OMV_LUKS_SCRIPT_DEFAULT} ];then
 	rm -f ${OMV_LUKS_SCRIPT_DEFAULT}
 fi
+
+_check_zfs () {
+	fs_type_array=$( (omv-confdbadm read conf.system.filesystem.mountpoint | jq -r '.[]|.type' ) )
+    for fs in ${fs_type_array[@]}; do
+    	if [ "$fs" = "zfs" ];then
+    		echo "ZFS=yes" >> ${OMV_LUKS_SCRIPT_DEFAULT}
+    		break
+    	fi
+    done
+}
 
 case ${keydevice_enable} in 
 	"true")
@@ -67,9 +77,9 @@ esac
 echo "KEYDEVICE_DEV_PATH=${keydevice_predictable}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
 echo "KEYDEVICE_MNT_PATH=/mnt/keydevice_${keydevice_uuid}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
 echo "KEYDEVICE_UUID=${keydevice_uuid}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
+_check_zfs
 
-
-
+# set +x
 
 
 

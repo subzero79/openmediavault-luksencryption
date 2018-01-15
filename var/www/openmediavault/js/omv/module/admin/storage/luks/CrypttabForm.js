@@ -61,7 +61,7 @@ Ext.define("OMV.module.admin.storage.luks.CrypttabForm", {
                 plugins: [{
                     ptype: "fieldinfo",
                     text: _("Activating this will prevent all services (except SSH) from starting at boot. \
-                    	After ssh login you can decrypt your drives with omv-decrypt-luks command as root. This will parse  \
+                    	After ssh login you can decrypt your drives with omv-luks-start command as root. This will parse  \
                     	all devices in /etc/crypttab. Once decryption is finished, the server will mount all drives, activate all systemd services \
                     	until it reaches multi.-user.target. This will also add the noauto flag to every fstab line created by openmediavault \
                     	Drives will no longer be mounted at boot, but just using the decryption script supplied by the plugin.")
