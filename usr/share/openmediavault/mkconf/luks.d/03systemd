@@ -48,6 +48,7 @@ Description=Decrypted System
 Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
 Requires=before-decrypt.target
 After=before-decrypt.target
+Before=zfs.target
 Conflicts=systemd-ask-password-console.path systemd-ask-password-console.service systemd-ask-password-plymouth.path systemd-ask-password-plymouth.service
 EOF
 	
@@ -106,6 +107,8 @@ _clean_luks_systemd_units ()
 		rm -fr /etc/systemd/system/openmediavault-luks-*.service
 	fi
 }
+
+
 
 _generate_automount_systemd_unit () 
 {

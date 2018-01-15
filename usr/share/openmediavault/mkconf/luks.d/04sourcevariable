@@ -35,12 +35,17 @@ OMV_LUKS_CRYPTDISKS_DEFAULT=${OMV_LUKS_CRYPTDISKS_DEFAULT:-"/etc/default/cryptdi
 OMV_LUKS_CRYPTTAB_CONFIG=${OMV_LUKS_CRYPTTAB_CONFIG:-"/etc/crypttab"}
 OMV_LUKS_DM="conf.service.luks"
 OMV_LUKS_SCRIPT_DEFAULT="/etc/default/openmediavault-luksencryption"
+OMV_LUKS_DEVICE_DM="conf.service.luks.device"
 
 luks_settings=$(omv-confdbadm read ${OMV_LUKS_DM})
 keydevice_enable=$(echo "${luks_settings}" | jq -r '.|.enablekeydevice')
 keydevice_encrypted=$(echo "${luks_settings}" | jq -r '.|.isencrypted')
 keydevice_uuid=$(echo "${luks_settings}" | jq -r '.|.uuid')
 keydevice_predictable=$(echo "${luks_settings}" | jq -r '.|.predictable')
+
+omv_luks_crypttab_devices=( $(omv-confdbadm read ${OMV_LUKS_DEVICE_DM} | \
+												jq -r '.[] |
+													   .name' ) )
 
 if [ -f ${OMV_LUKS_SCRIPT_DEFAULT} ];then
 	rm -f ${OMV_LUKS_SCRIPT_DEFAULT}
@@ -54,6 +59,15 @@ _check_zfs () {
     		break
     	fi
     done
+}
+
+_generate_cryptodevices_array ()
+{
+	for i in ${omv_luks_crypttab_devices[@]};do
+		crypt_dev+=( $(echo "systemd-cryptsetup@`systemd-escape --suffix "service" --path $i`") )
+	done
+	echo "CRYPT_DEV="'"'${crypt_dev[@]}'"' >> ${OMV_LUKS_SCRIPT_DEFAULT}
+
 }
 
 case ${keydevice_enable} in 
@@ -78,6 +92,7 @@ echo "KEYDEVICE_DEV_PATH=${keydevice_predictable}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
 echo "KEYDEVICE_MNT_PATH=/mnt/keydevice_${keydevice_uuid}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
 echo "KEYDEVICE_UUID=${keydevice_uuid}" >> ${OMV_LUKS_SCRIPT_DEFAULT}
 _check_zfs
+_generate_cryptodevices_array
 
 # set +x
 

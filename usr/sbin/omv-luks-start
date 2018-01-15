@@ -24,7 +24,7 @@
 # http://linux.die.net/man/5/crypttab
 # https://gitlab.com/cryptsetup/cryptsetup
 
-# set -x
+ # set -x
 
 . /etc/default/openmediavault-luksencryption
 
@@ -34,17 +34,21 @@
 # KEYDEVICE_MNT_PATH=/mnt/keydevice_e07f98de-ef7a-4558-ac86-5071397fa118
 # KEYDEVICE_UUID=e07f98de-ef7a-4558-ac86-5071397fa118
 
+source "/root/bash-spinner/spinner.sh"
+
+
 
 _cleanup() {
 	umount -l -f ${KEYDEVICE_MNT_PATH}
 	if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
-		echo "Removing the mount directory"
+		echo "Removing the mount directory ${KEYDEVICE_MNT_PATH}"
 		rm -rf ${KEYDEVICE_MNT_PATH}
 	else
 		echo "Directory not empty"
 	fi
-    exit
+	echo "Closing the key device ${KEYDEVICE_DEV_PATH}"
 	cryptsetup luksClose keydevice
+    exit
 }
 trap _cleanup 0 1 2 5 15
 
@@ -60,18 +64,23 @@ _check_luks_key_device_is_open ()
 }
 
 _start_full_system () {
-	echo "Proceeding to decrypt drives"
-	if [ "$ZFS" = "yes" ];then
-		echo "ZFS filesytem presents, initiating zfs.target"
-		systemctl start zfs.target
-	fi
+	echo "Proceeding to unlock drives"
 	systemctl start decrypt.target
-	echo "Decryption of drives finished, starting top mount disks"
+	echo "Unlocking of drives ended, attempting to mount disks and encrypted containers"
 	if [ "$ZFS" = "yes" ];then
-		echo "ZFS filesytem presents, initiating zfs.target"
-		systemctl start zfs.target
+		echo "ZFS filesytem present. Waiting for devices to be ready..."
+		start_spinner "Crypto devices ${CRYPT_DEV[@]} not ready yet for ZFS target"
+		until /bin/systemctl status --no-pager ${CRYPT_DEV[@]} &>/dev/null
+		do
+		    sleep 3
+		done
+		stop_spinner $?
+		echo "Initiating zfs.target"
+		/bin/systemctl start zfs.target
 	fi
+	echo "Mounting linux filesystems from /etc/fstab"
 	systemctl start "luks-mount.target"
+	echo "Starting multi-user.target"
 }
 
 if [ "${KEYDEVICE}" == "no" ];then
@@ -99,7 +108,7 @@ if [ "${KEYDEVICE}" == "yes" ];then
 				mkdir ${KEYDEVICE_MNT_PATH}
 			fi
 			cryptsetup luksOpen ${KEYDEVICE_DEV_PATH} keydevice
-			_check_luks_key_device_is_open "${KEYDEVICE_UUID}" keydevice
+			_check_luks_key_device_is_open "${KEYDEVICE_DEV_PATH}" keydevice
 			if [ $? -eq 0 ];then
 				echo "Mounting /dev/mapper/keydevice at ${KEYDEVICE_MNT_PATH}"
 				mount /dev/mapper/keydevice ${KEYDEVICE_MNT_PATH}
