@@ -1,3 +1,9 @@
+openmediavault-luksencryption (4.0.2+nmu1) UNRELEASED; urgency=medium
+
+  * First testing for advanced settings
+
+ -- root <root@debian9.lan>  Sun, 28 Jan 2018 15:12:10 +1000
+
 openmediavault-luksencryption (3.0.2) stable; urgency=low
 
   * Improve foreign content handling
