@@ -56,23 +56,10 @@ EOF
 	for i in ${omv_luks_crypttab_devices[@]};do
 		echo "Requires=systemd-cryptsetup@`systemd-escape --suffix "service" --path $i`" >> "${OMV_LUKS_DECRYPT_TARGET}"
 	done
-
-# ### Get all openmediavault fstab mount points and put them in the decrypt target as dependancy
-# 	for i in ${omv_systemd_mnt_points[@]};do
-# 		echo "Requires=`systemd-escape --suffix "mount" --path $i`" >> "${OMV_LUKS_DECRYPT_TARGET}"
-# 	done
-
-# ### Get all sharedfolder systemd bind mount units, disable them and add them to the decrypt target as dependancy
-# 	for name in ${sf_names[@]};do
-# 		sf_unit="sharedfolders-"`systemd-escape --suffix "mount" --path $name`
-# 		# systemctl disable "${sf_unit}"
-# 		echo "Requires=${sf_unit}" >> "${OMV_LUKS_DECRYPT_TARGET}"
-# 	done
-
-### Add systemd service unit that will trigger full system start
-	# echo "Requires=omv-luks-start-full-systemd.service" >> "${OMV_LUKS_DECRYPT_TARGET}"
 }
 
+### Is necessary to split into two targets, one to handle device unlocking and the other one to handle mounts. This is in case
+### a crypto device is a zfs member
 _generate_mount_target ()
 {
 		cat << EOF > ${OMV_LUKS_MOUNT_TARGET}
@@ -107,7 +94,6 @@ _clean_luks_systemd_units ()
 		rm -fr /etc/systemd/system/openmediavault-luks-*.service
 	fi
 }
-
 
 
 _generate_automount_systemd_unit () 

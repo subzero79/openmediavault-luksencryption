@@ -69,12 +69,12 @@ _start_full_system () {
 	echo "Unlocking of drives ended, attempting to mount disks and encrypted containers"
 	if [ "$ZFS" = "yes" ];then
 		echo "ZFS filesytem present. Waiting for devices to be ready..."
-		start_spinner "Crypto devices ${CRYPT_DEV[@]} not ready yet for ZFS target"
+		echo "Crypto devices ${CRYPT_DEV[@]} not ready yet for ZFS target"
 		until /bin/systemctl status --no-pager ${CRYPT_DEV[@]} &>/dev/null
 		do
 		    sleep 3
 		done
-		stop_spinner $?
+		echo "Crypto devices ready...."
 		echo "Initiating zfs.target"
 		/bin/systemctl start zfs.target
 	fi
