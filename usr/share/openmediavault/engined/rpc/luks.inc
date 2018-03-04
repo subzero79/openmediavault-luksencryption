@@ -49,6 +49,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
 
         $this->registerMethod("enumerateContainers");
         $this->registerMethod("getContainersList");
+        $this->registerMethod("getContainersListCrypttab");
         $this->registerMethod("getContainerCandidates");
         $this->registerMethod("getContainerDetails");
         $this->registerMethod("createContainer");
@@ -158,6 +159,42 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
             $params['sortdir']
         );
     }
+
+   /**
+     * Get a list of LUKS containers that are not in crypttab database
+     * @param params An array containing the following fields:
+     *     \em start The index where to start.
+     *     \em limit The number of objects to process.
+     *     \em sortfield The name of the column used to sort.
+     *     \em sortdir The sort direction, ASC or DESC.
+     * @param context The context of the caller.
+     * @return An array containing the requested objects. The field \em total
+     *     contains the total number of objects, \em data contains the object
+     *     array. An exception will be thrown in case of an error.
+     */
+    public function getContainersListCrypttab($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.common.getlist");
+        // Enumerate all LUKS containers on the system.
+        $containers = $this->callMethod("getContainersList", $params, $context);
+        foreach ($containers as $luksk => $luksv) {
+            // Filter all devices that are already in the crypttab            
+            if ($luksv['crypttabregistration'] === TRUE)
+                continue;
+            $result[] = [
+                "devicefile"            => $luksv['devicefile'],
+                "size"                  => $luksv['devicefile'],
+                "devicemappername"      => $luksv['devicemappername'],
+                "decrypteddevicefile"   => $luksv['decrypteddevicefile'],
+                "luksuuid"              => $luksv['luksuuid'],
+                "description"           => $luksv['description']
+            ];
+        }
+        return $result;
+    }
+
 
     /**
      * Get list of devices that can be used to create a LUKS container.

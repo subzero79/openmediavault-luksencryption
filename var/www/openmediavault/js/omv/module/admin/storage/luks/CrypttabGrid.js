@@ -83,6 +83,7 @@ Ext.define("OMV.module.admin.storage.luks.device", {
                         { name: "uuid", type: "string" },
                         { name: "size", type: "boolean" },
                         { name: "devicemappername", type: "string" },
+                        { name: "crypttabregistration", type: "boolean"},
                         { name: "_used", type: "boolean" },
                         { name: "description", type: "string" }
                     ]
@@ -92,7 +93,7 @@ Ext.define("OMV.module.admin.storage.luks.device", {
                     appendSortParams: true,
                     rpcData: {
                         service: "LuksMgmt",
-                        method: "getContainersList"
+                        method: "getContainersListCrypttab"
                     }
                 },
                 sorters: [{
