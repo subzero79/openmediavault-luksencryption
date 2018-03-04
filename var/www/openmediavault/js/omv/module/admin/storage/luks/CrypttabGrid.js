@@ -177,6 +177,7 @@ Ext.define("OMV.module.admin.storage.luks.device", {
             id: "devicemappername",
             readOnly   : (me.uuid !== OMV.UUID_UNDEFINED),
             fieldLabel: _("Mapped name"),
+            allowBlank: false,
             /*This field is then disabled for when the disk is mounted (referenced into omv internal db)*/
             // readOnly   : (me._used !== true),
             boxLabel: _("This is the mapped name you want to assign when the device is unlocked (ie: /dev/mapper/MyLUKSdeviceNAME)"),
