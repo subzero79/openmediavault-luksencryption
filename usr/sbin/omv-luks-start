@@ -39,16 +39,18 @@ source "/root/bash-spinner/spinner.sh"
 
 
 _cleanup() {
-	umount -l -f ${KEYDEVICE_MNT_PATH}
-	if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
-		echo "Removing the mount directory ${KEYDEVICE_MNT_PATH}"
-		rm -rf ${KEYDEVICE_MNT_PATH}
-	else
-		echo "Directory not empty"
+	if [ "${KEYDEVICE}" == "yes" ];then
+		umount -l -f ${KEYDEVICE_MNT_PATH}
+		if [ ! "$(ls -A ${KEYDEVICE_MNT_PATH})" ];then
+			echo "Removing the mount directory ${KEYDEVICE_MNT_PATH}"
+			rm -rf ${KEYDEVICE_MNT_PATH}
+		else
+			echo "Directory not empty"
+		fi
+		echo "Closing the key device ${KEYDEVICE_DEV_PATH}"
+		cryptsetup luksClose keydevice
+		exit
 	fi
-	echo "Closing the key device ${KEYDEVICE_DEV_PATH}"
-	cryptsetup luksClose keydevice
-    exit
 }
 trap _cleanup 0 1 2 5 15
 
