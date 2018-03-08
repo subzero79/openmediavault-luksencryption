@@ -80,9 +80,10 @@ _start_full_system () {
 		echo "Initiating zfs.target"
 		/bin/systemctl start zfs.target
 	fi
-	echo "Mounting linux filesystems from /etc/fstab"
-	systemctl start "luks-mount.target"
-	echo "Starting multi-user.target"
+	echo "Mounting linux filesystems from /etc/fstab..."
+	systemctl start post-decrypt.target
+	echo "Starting multi-user.target now...."
+	systemctl start final-decrypt.target
 }
 
 if [ "${KEYDEVICE}" == "no" ];then
