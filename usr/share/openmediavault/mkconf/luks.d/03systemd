@@ -154,6 +154,7 @@ case "${luks_settings_enable}" in
 															   .name' ) )
 		_generate_decrypt_target
 		_generate_postdecrypt_target
+		_generate_startfullsystemd_target
 		_generate_automount_systemd_unit		
 		systemctl set-default before-decrypt.target
 		;;
