@@ -34,8 +34,6 @@
 # KEYDEVICE_MNT_PATH=/mnt/keydevice_e07f98de-ef7a-4558-ac86-5071397fa118
 # KEYDEVICE_UUID=e07f98de-ef7a-4558-ac86-5071397fa118
 
-source "/root/bash-spinner/spinner.sh"
-
 
 
 _cleanup() {
