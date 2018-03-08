@@ -36,7 +36,8 @@ OMV_LUKS_DM="conf.service.luks"
 OMV_LUKS_DEVICE_DM="conf.service.luks.device"
 OMV_FSTAB_MNTENT_DM="conf.system.filesystem.mountpoint"
 OMV_LUKS_DECRYPT_TARGET="/etc/systemd/system/decrypt.target"
-OMV_LUKS_MOUNT_TARGET="/etc/systemd/system/luks-mount.target"
+OMV_LUKS_POST_DECRYPT_TARGET="/etc/systemd/system/post-decrypt.target"
+OMV_LUKS_STARTFULLSYSTEMD_TARGET="/etc/systemd/system/final-decrypt.target"
 OMV_LUKS_SYSTEMD_UNIT_PREFIX="/etc/systemd/system/openmediavault-luks-"
 
 
@@ -60,9 +61,9 @@ EOF
 
 ### Is necessary to split into two targets, one to handle device unlocking and the other one to handle mounts. This is in case
 ### a crypto device is a zfs member
-_generate_mount_target ()
+_generate_postdecrypt_target ()
 {
-		cat << EOF > ${OMV_LUKS_MOUNT_TARGET}
+		cat << EOF > ${OMV_LUKS_POST_DECRYPT_TARGET}
 [Unit]
 Description=Mount decrypted and unencrypted drives
 Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
@@ -72,18 +73,28 @@ EOF
 
 ### Get all openmediavault fstab mount points and put them in the decrypt target as dependancy
 	for i in ${omv_systemd_mnt_points[@]};do
-		echo "Requires=`systemd-escape --suffix "mount" --path $i`" >> "${OMV_LUKS_MOUNT_TARGET}"
+		echo "Requires=`systemd-escape --suffix "mount" --path $i`" >> "${OMV_LUKS_POST_DECRYPT_TARGET}"
 	done
 
 ### Get all sharedfolder systemd bind mount units, disable them and add them to the decrypt target as dependancy
 	for name in ${sf_names[@]};do
 		sf_unit="sharedfolders-"`systemd-escape --suffix "mount" --path $name`
 		# systemctl disable "${sf_unit}"
-		echo "Requires=${sf_unit}" >> "${OMV_LUKS_MOUNT_TARGET}"
+		echo "Requires=${sf_unit}" >> "${OMV_LUKS_POST_DECRYPT_TARGET}"
 	done
 
-### Add systemd service unit that will trigger full system start
-	echo "Requires=omv-luks-start-full-systemd.service" >> "${OMV_LUKS_MOUNT_TARGET}"
+}
+
+_generate_startfullsystemd_target () 
+{
+		cat << EOF > ${OMV_LUKS_STARTFULLSYSTEMD_TARGET}
+[Unit]
+Description=Start full multi-user.target
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+Requires=post-decrypt.target
+After=post-decrypt.target
+EOF
+	echo "Requires=omv-luks-start-full-systemd.service" >> "${OMV_LUKS_STARTFULLSYSTEMD_TARGET}"
 
 }
 
@@ -142,7 +153,7 @@ case "${luks_settings_enable}" in
 														jq -r '.[] |
 															   .name' ) )
 		_generate_decrypt_target
-		_generate_mount_target
+		_generate_postdecrypt_target
 		_generate_automount_systemd_unit		
 		systemctl set-default before-decrypt.target
 		;;
