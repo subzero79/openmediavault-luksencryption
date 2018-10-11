@@ -179,8 +179,9 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->validateMethodParams($params, "rpc.common.getlist");
         // Enumerate all LUKS containers on the system.
         $containers = $this->callMethod("getContainersList", $params, $context)['data'];
+        $result = [];
         foreach ($containers as $luksk => $luksv) {
-            // Filter all devices that are already in the crypttab            
+            // Filter all devices that are already in the crypttab
             if ($luksv['crypttabregistration'] === TRUE)
                 continue;
             $result[] = [
