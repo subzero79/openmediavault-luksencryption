@@ -5,12 +5,18 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
+remove_action() {
+    dpkg-trigger update-fixperms
+}
+
 case "$1" in
     purge)
         omv_config_delete "/config/services/luks"
+        remove_action
     ;;
 
     remove)
+        remove_action
     ;;
 
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

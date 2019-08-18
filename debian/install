@@ -1,5 +1,6 @@
 usr/share/openmediavault/* usr/share/openmediavault
-var/www/openmediavault/* var/www/openmediavault
 usr/share/php/openmediavault/* usr/share/php/openmediavault
 lib/systemd/system/* lib/systemd/system
 usr/sbin/* usr/sbin
+var/www/openmediavault/* var/www/openmediavault
+
