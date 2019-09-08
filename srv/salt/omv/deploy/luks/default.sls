@@ -15,6 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-remove_openmediavault_luks_default:
-  file.absent:
-    - name: "/etc/default/openmediavault-luksencryption"
+{% set dirpath = '/srv/salt' | path_join(slspath) %}
+
+include:
+{% for file in salt['file.readdir'](dirpath) | sort %}
+{% if file | regex_match('^(\d+.+).sls$', ignorecase=True) %}
+  - .{{ file | replace('.sls', '') }}
+{% endif %}
+{% endfor %}
+
+# remove_openmediavault_luks_default:
+#   file.absent:
+#     - name: "/etc/default/openmediavault-luksencryption"

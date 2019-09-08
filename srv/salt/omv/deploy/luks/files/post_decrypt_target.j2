@@ -1,0 +1,18 @@
+{% set mnt_points = salt['omv_conf.get_by_filter'](
+	'conf.system.filesystem.mountpoint',
+ 	{'operator': 'stringNotEquals', 'arg0': 'type', 'arg1': 'zfs'}) %}
+{%- set shared_folders = salt['omv_conf.get']('conf.system.sharedfolder') -%}
+[Unit]
+Description=Mount decrypted and unencrypted drives
+Description=openmediavault_luksencryption_target
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+Requires=decrypt.target
+After=decrypt.target
+{%- for item in mnt_points -%}
+{% set item_escaped = salt['cmd.run']('systemd-escape --suffix=mount --path '+item.dir) %}
+Requires={{item_escaped}}
+{%- endfor -%}
+{%- for item in shared_folders -%}
+{% set item_escaped = salt['cmd.run']('systemd-escape --suffix=mount --path '+item.name) %}
+Requires=sharedfolder-{{item_escaped}}
+{%- endfor -%}

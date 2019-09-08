@@ -1,0 +1,7 @@
+[Unit]
+Description=Start full multi-user.target
+Description=openmediavault_luksencryption_target
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+Requires=post-decrypt.target
+After=post-decrypt.target
+Requires=omv-luks-start-full-systemd.service

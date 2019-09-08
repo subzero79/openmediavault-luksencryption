@@ -1,0 +1,14 @@
+{%- set devices = salt['omv_conf.get']('conf.service.luks.device') -%}
+[Unit]
+Description=Decrypted System
+Description=openmediavault_luksencryption_target
+Documentation=https://blog.iwakd.de/headless-luks-decryption-via-ssh
+Requires=before-decrypt.target
+After=before-decrypt.target
+Before=zfs.target
+Conflicts=systemd-ask-password-console.path systemd-ask-password-console.service systemd-ask-password-plymouth.path systemd-ask-password-plymouth.service
+{%- for item in devices -%}
+{% set item_escaped = salt['cmd.run']('systemd-escape --suffix=service --path '+item.name) %}
+Requires=systemd-cryptsetup@{{item_escaped}}
+{%- endfor -%}
+
