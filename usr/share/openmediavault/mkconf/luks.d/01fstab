@@ -61,8 +61,11 @@ for uuid in ${fstab_na[@]};do
 	fstab_new_opts=${fstab_new_opts/#,/}
 	fstab_new_opts=${fstab_new_opts/%,/}
 	fstab_new_opts=${fstab_new_opts/,,/}
-	fstab_new_entry=$(echo $fstab_entry | jq -r --arg opts $fstab_new_opts '.opts|=$opts')
-	# echo $fstab_new_opts
+	if [ ! -z $fstab_new_opts ]; then
+		fstab_new_entry=$(echo $fstab_entry | jq -r --arg opts $fstab_new_opts '.opts|=$opts')
+	else
+		fstab_new_entry=$(echo $fstab_entry | jq -r '.opts|=""')
+	fi
 	# Update each mntent configuration object with new fstab options
 	omv-confdbadm update ${OMV_FSTAB_MNTENT_DM} "${fstab_new_entry}"
 done
