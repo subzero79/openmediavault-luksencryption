@@ -1,0 +1,3 @@
+{% set devices = salt['omv_conf.get']('conf.service.luks.device') %}
+{% set header = '### >> OpenMediaVault LUKS Plugin' %}
+{% set footer = '### << OpenMediaVault LUKS Plugin' %}
