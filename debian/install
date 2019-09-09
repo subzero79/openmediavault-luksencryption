@@ -1,5 +1,6 @@
 srv/* srv
 usr/share/openmediavault/* usr/share/openmediavault
+usr/share/omvluks/* usr/share/omvluks
 usr/share/php/openmediavault/* usr/share/php/openmediavault
 lib/systemd/system/* lib/systemd/system
 usr/sbin/* usr/sbin

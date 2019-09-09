@@ -29,6 +29,8 @@ use OMV\System\Filesystem\Filesystem;
 use OMV\System\Storage\Backend\DM;
 
 
+require_once "/usr/share/omvluks/Utils.php";
+
 class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
 
     private $mountOnUnlock = TRUE;
@@ -932,52 +934,11 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->validateMethodParams($params, "rpc.luks.setsettings");
         // Get the existing configuration object.
 
-
+        $fstab_entries = OMVLuksUtil::modifyFsTabDB($params,$context);
         $db = \OMV\Config\Database::getInstance();
         $object = $db->get("conf.service.luks");
         $object->setAssoc($params);
         $db->set($object);
-        // Get fstab entries
-        $entries = Rpc::call('FsTab', 'enumerateEntries', [], $context);
-        $fstab_entries = [];
-        // Enabling before-decrypt.target we need to modify the fstab db entries of all fs registered with omv
-        if ($params['enable'] === TRUE) {
-            // We need to add noauto to each mntent entry
-            // print_r($entries[0]);
-            foreach ($entries as $key) {
-                // Convert options to array
-                $opts = explode(',', $key['opts']);
-                // Check if noauto is present
-                if  (array_search("noauto",$opts) === FALSE )  { 
-                // Add noauto, and convert the key['opts] array back to string
-                    array_push($opts, 'noauto');
-                    $key['opts'] = implode(',', $opts);
-                }
-                // Push the options to the fstab object
-                array_push($fstab_entries, $key);
-            }
-        } else {
-            // IF before-decrypt.target is disabled we need to get rid of all noauto options
-           foreach ($entries as $key) {
-                // Convert options to array
-                $opts = explode(',', $key['opts']);
-                // Check if noauto is present, should return the array index
-                $noauto_index = array_search("noauto",$opts);
-                if ( $noauto_index >= 0 ) { 
-                // Add noauto, and convert the key['opts] array back to string
-                    unset($opts[$noauto_index]);
-                    $key['opts'] = implode(',', $opts);
-                }
-                // Push the object to the fstab array
-                array_push($fstab_entries, $key);
-            }
-        }
-
-        // Finally we push every new fstab mntent to the db
-        foreach ($fstab_entries as $key) {
-            Rpc::call('FsTab','set', $key, $context);
-        }
-
         return $object->getAssoc();
     }
 
