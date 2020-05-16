@@ -306,10 +306,11 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * @return None.
      */
     private function mountContainerFS($deviceFile, $context) {
-        if (FALSE !== \OMV\Rpc\Rpc::call("FileSystemMgmt", "hasFilesystem",
+        if (FALSE !== \OMV\Rpc\Rpc::call("FileSystemMgmt", "hasFilesystem", 
                 [ "devicefile" => $deviceFile ], $context)) {
-            if (FALSE !== \OMV\Rpc\Rpc::call("FsTab", "getByFsName",
-                    [ "id" => $devicefile ], $context)) {
+            $meObject = \OMV\Rpc\Rpc::call("FsTab", "getByFsName", 
+                [ "fsname" => $deviceFile ], $context);
+            if (FALSE !== $meObject) {
                 switch (strtolower($meObject['type'])) {
                 case "btrfs":
                     /**
