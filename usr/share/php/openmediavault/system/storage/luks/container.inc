@@ -732,4 +732,30 @@ class Container extends \OMV\System\Storage\StorageDevice {
         $this->refresh();
         return TRUE;
     }
+
+    /**
+     * Helper function for naming hkey files for containers.
+     * @return A sanitised string, unique to the disk/container,
+     *          in the following format: VENDOR_MODEL_SERIALNUMBER_LUKSUUID.
+     */
+    public function generateContainerString() {
+        try {
+            $details = preg_replace('/\s+/',
+                                   '-',
+                                   array(
+                                         $this->getVendor(),
+                                         $this->getDeviceFile(),
+                                         $this->getModel(),
+                                         $this->getSerialNumber(),
+                                         $this->getUuid()
+                                        )
+                                  );
+            $str = implode('_', $details);
+        } catch (Exception $e) {
+            $str = "";
+        }
+        return str_replace("/", "-", $str);
+    }
+
+
 }

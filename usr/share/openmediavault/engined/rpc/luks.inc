@@ -527,9 +527,27 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         if (FALSE != $open && FALSE != $test) {
             # code...
         }
-
+        $key = $params['keyfile'];
         $dm_name = $luks->getDeviceMapperName();
-
+        $unique_str = $luks->generateContainerString();
+        // $storedKey = "/etc/openmediavault/luks/LUKS_".$str.".key";
+        $storedKey = "/etc/openmediavault/luks/LUKS_".$unique_str.".key";
+        if (!copy($key, $storedKey) || !chmod($storedKey, 0400)) {
+            if(file_exists($storedKey)) {
+                // secure cleanup
+                $cmd = sprintf("export LANG=C; shred -u %s ",
+                                escapeshellarg($storedKey));
+                if (0 !== $this->exec($cmd, $output)) {
+                    throw new \OMV\Exception($cmd . implode("\n", $output));
+                } else {
+                    $this->debug($output);
+                    // fall back to PHP deletion
+                    unlink($storedKey);
+                }
+            } else {
+                throw new \OMV\Exception(sprintf(gettext("Unable to save key file")));
+            } 
+        }
 
     }
 
