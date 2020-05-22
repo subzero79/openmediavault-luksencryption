@@ -565,7 +565,7 @@ class Container extends \OMV\System\Storage\StorageDevice {
             $cmd .= sprintf(" <(echo -n %s)", escapeshellarg($new));
             // N.B. Need to use bash rather than default sh here for
             // process substitution method of injecting new passphrase
-            $cmd = sprintf("/bin/bash -c '%s'", $cmd);
+            // $cmd = sprintf("/bin/bash -c '%s'", $cmd);
         }
         $process = new Process($cmd);
         $process->setRedirect2to1();
@@ -683,7 +683,7 @@ class Container extends \OMV\System\Storage\StorageDevice {
                 escapeshellarg($this->getDeviceFile()),
                 escapeshellarg($key));
         } else {
-            $cmd = sprintf("/bin/bash -c 'echo -n %s | ".
+            $cmd = sprintf("echo -n %s | ".
                 "cryptsetup luksOpen -v --test-passphrase %s --key-file=-'",
                 escapeshellarg($key),
                 escapeshellarg($this->getDeviceFile()));
