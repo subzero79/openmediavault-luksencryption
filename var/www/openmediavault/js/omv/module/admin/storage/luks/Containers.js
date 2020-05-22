@@ -1854,8 +1854,9 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             okButtonText:   _("Register"),
             rpcSetMethod:  "setCrypttab",
             params: {
-                uuid:       record.get("uuid"),
-                decrypteddevicefile: record.get("decrypteddevicefile")
+                uuid: record.get("uuid"),
+                decrypteddevicefile: record.get("decrypteddevicefile"),
+                devicefile: record.get("devicefile")
             },
             listeners: [{
                 scope: me,
