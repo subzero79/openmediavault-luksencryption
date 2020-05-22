@@ -406,12 +406,12 @@ Ext.define("OMV.module.admin.storage.luks.container.Crypttab", {
         var me = this;
         return [{
             xtype: "textfield",
-            name: "devicefile",
-            fieldLabel: _("Device"),
+            name: "decrypteddevicefile",
+            fieldLabel: _("Decrypted device"),
             allowBlank: false,
             readOnly: true,
             submitValue: false,
-            value: me.params.devicefile,
+            value: me.params.decrypteddevicefile,
             listeners: {
                 scope: me,
                 specialkey: me.submitOnEnter
@@ -446,7 +446,7 @@ Ext.define("OMV.module.admin.storage.luks.container.Crypttab", {
         var params = me.callParent(arguments);
         return Ext.apply(params, {
             uuid: me.params.uuid,
-            devicefile: me.params.devicefile
+            decrypteddevicefile: me.params.decrypteddevicefile
         });
     },
 
@@ -1855,7 +1855,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             rpcSetMethod:  "setCrypttab",
             params: {
                 uuid:       record.get("uuid"),
-                devicefile: record.get("devicefile")
+                decrypteddevicefile: record.get("decrypteddevicefile")
             },
             listeners: [{
                 scope: me,
