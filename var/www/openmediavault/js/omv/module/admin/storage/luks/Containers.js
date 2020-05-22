@@ -372,6 +372,187 @@ Ext.define("OMV.module.admin.storage.luks.container.Create", {
 });
 
 
+Ext.define("OMV.module.admin.storage.luks.container.Crypttab", {
+    extend: "OMV.workspace.window.Form",
+
+    rpcService: "LuksMgmt",
+    // rpcSetMethod: "openContainer", // override
+    // title: _("Unlock encrypted device"), //override
+    // okButtonText: _("Unlock"), // override
+    // submitMsg: _("Unlocking ..."), //override
+    keyFileUrl: "uploadextra.php",
+    options: {
+        secureDeletion: true
+    },
+    autoLoadData: false,
+    hideResetButton: true,
+    width: 500,
+
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+    },
+
+    getFormConfig: function() {
+        return {
+            layout: {
+                type: "vbox",
+                align: "stretch"
+            }
+        };
+    },
+
+    getFormItems: function() {
+        var me = this;
+        return [{
+            xtype: "textfield",
+            name: "devicefile",
+            fieldLabel: _("Device"),
+            allowBlank: false,
+            readOnly: true,
+            submitValue: false,
+            value: me.params.devicefile,
+            listeners: {
+                scope: me,
+                specialkey: me.submitOnEnter
+            }
+        },{
+            xtype: "fieldset",
+            title: _("Upload a key file"),
+            defaults: {
+                labelSeparator: ""
+            },
+            items: [{
+                xtype: "hiddenfield",
+                name: "MAX_FILE_SIZE",
+                value: 8388608
+            },{
+                xtype: "filefield",
+                name: "keyfile",
+                fieldLabel: _("Key file"),
+                buttonText: _("Browse..."),
+                allowBlank: true,
+                listeners: {
+                    scope: me,
+                    specialkey: me.submitOnEnter
+                }
+            }]
+        }];
+    },
+
+
+    getRpcSetParams: function() {
+        var me = this;
+        var params = me.callParent(arguments);
+        return Ext.apply(params, {
+            uuid: me.params.uuid,
+            devicefile: me.params.devicefile
+        });
+    },
+
+    onOkButton: function() {
+        var me = this;
+        var basicForm = me.fp.getForm();
+        me.doSubmit();
+    },
+
+    doSubmit: function() {
+        var me = this;
+        // What kind of key are we using, key file or passphrase?
+        if(me.fp.findField("keyfile").value) {
+            me.doUpload();
+        } //else {
+        //     me.fp.findField("MAX_FILE_SIZE").submitValue = false;
+        //     me.callParent(arguments);
+        // }
+    },
+
+    doUpload: function() {
+        var me = this;
+        var basicForm = me.fp.getForm();
+        me.setLoading(me.submitMsg);
+        basicForm.submit({
+            url: me.keyFileUrl,
+            method: "POST",
+            params: {
+                service: me.rpcService,
+                method: me.rpcSetMethod,
+                params: !Ext.isEmpty(me.params) ? Ext.JSON.encode(
+                  me.params).htmlspecialchars() : me.params,
+                options: !Ext.isEmpty(me.options) ? Ext.JSON.encode(
+                  me.options).htmlspecialchars() : me.options
+            },
+            scope: me,
+            success: function(form, action) {
+                me.setLoading(false);
+                this.onUploadSuccess(form, action);
+            },
+            failure: function(form, action) {
+                me.setLoading(false);
+                this.onUploadFailure(form, action);
+            }
+        });
+    },
+
+    submitOnEnter: function(field, event) {
+        var me = this;
+        if (event.getKey() == event.ENTER) {
+            me.onOkButton.call(me);
+        }
+    },
+
+    /**
+     * Method that is called when the file upload was successful.
+     * @param form The form that requested the action.
+     * @param action The Action object which performed the operation.
+     */
+    onUploadSuccess: function(form, action) {
+        var me = this;
+        // when doing test function, this will be the key slot number:
+        var retVal = action.result.responseText;
+        // !!! Attention !!! Fire event before window is closed,
+        // otherwise the dialog's own listener is removed before the
+        // event has been fired and the action has been executed.
+        // Fire 'submit' instead of success to duplicate that from
+        // passphrase method, which doesn't do any uploading.
+        me.fireEvent("submit", me, action.response, retVal);
+        // Now close the dialog.
+        me.close();
+    },
+
+    /**
+     * Method that is called when the file upload has been failed.
+     * @param form The form that requested the action.
+     * @param action The Action object which performed the operation.
+     */
+    onUploadFailure: function(form, action) {
+        var msg = action.response.responseText;
+        try {
+            // Try to decode JSON error messages.
+            msg = Ext.JSON.decode(msg);
+            // Format the message text for line breaks.
+            msg.message = this.nl2br(msg.message);
+        } catch(e) {
+            // Error message is plain text, e.g. error message from the
+            // web server.
+        }
+        OMV.MessageBox.error(null, msg);
+    },
+
+    /**
+     * Helper function to insert line breaks back into the error message
+     * @param str The message to process for line breaks.
+     * @param is_xhtml Boolean, whether to insert XHTML-compatible <br/>
+     *                 tags or not (default is true).
+     */
+    nl2br: function(str, is_xhtml) {
+        var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br />' : '<br>';
+        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
+    }
+});
+
+
+
 /**
  * Generalized class for providing a single key - used to
  * unlock a device, test if a key works, or to remove a key.
@@ -1465,6 +1646,15 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             scope: me,
             disabled: false
         },{
+            id: me.getId() + "-crypttab",
+            xtype: "button",
+            text: _("Crypttab"),
+            // icon: "images/padlock-open.svg",
+            iconCls: "x-fa fa-key",
+            handler: Ext.Function.bind(me.onCrypttabButton, me, [ me ]),
+            scope: me,
+            disabled: true
+        },{
             id: me.getId() + "-unlock",
             xtype: "button",
             text: _("Unlock"),
@@ -1601,9 +1791,11 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             if (true === record.get("unlocked")) {
                 tbarBtnDisabled["lock"] = false;
                 tbarBtnDisabled["delete"] = true;
+                tbarBtnDisabled['crypttab'] = false
             } else {
                 tbarBtnDisabled["unlock"] = false;
                 tbarBtnDisabled["delete"] = false;
+                tbarBtnDisabled["crypttab"] = true;
                 // Disable buttons if the device does not
                 // provide a UUID.
                 if(Ext.isEmpty(record.get("uuid"))) {
@@ -1649,6 +1841,28 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                     this.doReload();
                 }
             }
+        }).show();
+    },
+
+
+    onCrypttabButton: function() {
+        var me = this;
+        var record = me.getSelected();
+        Ext.create("OMV.module.admin.storage.luks.container.Crypttab", {
+            title:      _("Register in crypttab"),
+            submitMsg:      _("Registering ..."),
+            okButtonText:   _("Register"),
+            rpcSetMethod:  "setCrypttab",
+            params: {
+                uuid:       record.get("uuid"),
+                devicefile: record.get("devicefile")
+            },
+            listeners: [{
+                scope: me,
+                submit: function() {
+                    this.doReload();
+                }
+            }]
         }).show();
     },
 
