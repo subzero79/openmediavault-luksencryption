@@ -45,6 +45,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->registerMethod("getContainerCandidates");
         $this->registerMethod("getContainerDetails");
         $this->registerMethod("createContainer");
+        $this->registerMethod("setCrypttab");
         $this->registerMethod("deleteContainer");
         $this->registerMethod("modifyContainer");
         $this->registerMethod("openContainer");
@@ -492,6 +493,29 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
               "org.openmediavault.system.storage.luks.container",
               [ "devicefile" => $params['devicefile'] ]
         );
+    }
+
+
+    /**
+     * Create a crypttab entry in the database.
+     * @param params An array containing the following fields:
+     *     \em devicefile The device mapper file we are adding the entry to
+     *     \em keyfile Path to the uploaded key file to unlock the device.
+     * @param context The context of the caller.
+     * @return None.
+     * @throw E_MISC_DEVICE_NOT_FOUND
+     * @throw E_MISC_FAILURE
+     * @throw E_EXEC_FAILED
+     * @throw E_EXEC_MISC
+     */
+    public function setCrypttab($params, $context) {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams($params, "rpc.luks.createcontainer");
+        // Get the storage device object.
+        $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
+
     }
 
     /**
