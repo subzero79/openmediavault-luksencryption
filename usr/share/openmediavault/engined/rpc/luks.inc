@@ -500,6 +500,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * Create a crypttab entry in the database.
      * @param params An array containing the following fields:
      *     \em devicefile The device mapper file we are adding the entry to
+     *     \em decrypttedfilepath
      *     \em keyfile Path to the uploaded key file to unlock the device.
      * @param context The context of the caller.
      * @return None.
@@ -510,11 +511,25 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      */
     public function setCrypttab($params, $context) {
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
-        // Validate the parameters of the RPC service method.
-        $this->validateMethodParams($params, "rpc.luks.createcontainer");
+        // $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // // Validate the parameters of the RPC service method.
+        // $this->validateMethodParams($params, "rpc.luks.createcontainer");
         // Get the storage device object.
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
+        $luks = new \OMV\System\Storage\Luks\Container($params['devicefile']);
+        if (is_null($luks) || !$luks->exists()) {
+            throw new \OMV\Exception(
+                sprintf(gettext("LUKS container on '%s' not found"),
+                        $params['devicefile']));
+        }
+        $test = $luks->testKey($params['keyfile'], TRUE);
+        $open = $luks->isOpen();
+        if (FALSE != $open && FALSE != $test) {
+            # code...
+        }
+
+        $dm_name = $luks->getDeviceMapperName();
+
 
     }
 
