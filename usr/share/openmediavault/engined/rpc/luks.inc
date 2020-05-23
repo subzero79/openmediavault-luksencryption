@@ -20,6 +20,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use OMV\Config\ConfigObject;
+use OMV\Config\Database;
 use OMV\System\Process;
 
 class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
@@ -511,10 +513,11 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      */
     public function setCrypttab($params, $context) {
         // Validate the RPC caller context.
-        // $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
         // // Validate the parameters of the RPC service method.
-        // $this->validateMethodParams($params, "rpc.luks.createcontainer");
+        // $this->validateMethodParams($params, "rpc.luks.setcrypttab");
         // Get the storage device object.
+        $dataModelPath = 'conf.system.storage.luks.containers';
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
         $luks = new \OMV\System\Storage\Luks\Container($params['devicefile']);
         if (is_null($luks) || !$luks->exists()) {
@@ -548,6 +551,18 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 throw new \OMV\Exception(sprintf(gettext("Unable to save key file")));
             } 
         }
+
+        $db = Database::getInstance();
+        $object = new ConfigObject($dataModelPath);
+        $data = [ "luksuuid"=>$params["uuid"],
+                  "devicefile"=>$params["devicefile"],
+                  "passphrase"=> $storedKey,
+                  "devicemappername"=>$dm_name 
+        ];
+        $object->setAssoc($data);
+        $object->set('devicefile', $params['devicefile']);
+        $db->set($object);
+        // print_r($object);
 
     }
 

@@ -1,11 +1,11 @@
 {
 	"type": "config",
-	"id": "conf.system.storage.luks.container",
-	"title": "Mount point",
+	"id": "conf.system.storage.luks.containers",
+	"title": "Luks device",
 	"queryinfo": {
-		"xpath": "//system/storage/luks/container",
+		"xpath": "//system/storage/luks/containers",
 		"iterable": true,
-		"idproperty": "uuid",
+		"idproperty": "luksuuid",
 		"refproperty": "devicefile"
 	},
 	"properties": {
