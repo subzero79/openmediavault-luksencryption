@@ -1,0 +1,27 @@
+{
+	"type": "config",
+	"id": "conf.system.storage.luks.container",
+	"title": "Mount point",
+	"queryinfo": {
+		"xpath": "//system/storage/luks/container",
+		"iterable": true,
+		"idproperty": "uuid",
+		"refproperty": "devicefile"
+	},
+	"properties": {
+		"luksuuid": {
+			"type": "string",
+			"format": "uuidv4"
+		},
+		"devicefile": {
+			"type": "string",
+			"format": "devicefile"
+		},
+		"passphrase": {
+			"type": "string"
+		},
+		"devicemappername": {
+			"type": "string"
+		}
+	}
+}
