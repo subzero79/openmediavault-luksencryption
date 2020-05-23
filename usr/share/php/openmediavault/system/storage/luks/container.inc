@@ -635,7 +635,7 @@ class Container extends \OMV\System\Storage\StorageDevice {
                 escapeshellarg($this->getDeviceFile()),
                 escapeshellarg($key));
         } else {
-            $cmd = sprintf("echo -n %s | ".
+            $cmd = sprintf("/bin/bash -c 'echo -n %s | ".
                 "cryptsetup luksRemoveKey -q %s --key-file=-'",
                 escapeshellarg($key),
                 escapeshellarg($this->getDeviceFile()));
