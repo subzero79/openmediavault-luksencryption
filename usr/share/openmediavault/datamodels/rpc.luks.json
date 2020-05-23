@@ -198,4 +198,31 @@
 			}
 		}
 	}
+},{
+	"type": "rpc",
+	"id": "rpc.luks.setcrypttab",
+	"params": {
+		"type": "object",
+		"properties": {
+			"luksuuid": {
+				"type": "string",
+				"format": "uuidv4",
+				"required": true
+			},
+			"devicefile": {
+				"type": "string",
+				"format": "devicefile",
+				"required": true
+			},
+			"passphrase": {
+			    "type": "string",
+				"required": true
+			},
+			"devicemappername": {
+			    "type": "string",
+				"format": "devicefile",
+				"required": true
+			}
+		}
+	}
 }]
