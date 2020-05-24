@@ -1587,6 +1587,17 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                 }
                 return Ext.String.htmlEncode(value) + suffix;
             }
+        },{
+            xtype: "textcolumn",
+            text: _("Crypttab"),
+            sortable: true,
+            dataIndex: "crypttab",
+            hidden: true,
+            stateId: "crypttab",
+            renderer: function(value, metaData, record) {
+                value = OMV.util.Format.boolean(value);
+                return Ext.String.htmlEncode(value);
+            }
         }],
 
     initComponent: function() {
@@ -1610,7 +1621,8 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                         { name: "decrypteddevicefile", type: "string" },
                         { name: "_used", type: "boolean" },
                         { name: "luksversion", type: "string" },
-                        { name: "lukslabel", type: "string" }
+                        { name: "lukslabel", type: "string" },
+                        { name: "crypttab", type: "boolean" }
                     ]
                 }),
                 proxy: {
