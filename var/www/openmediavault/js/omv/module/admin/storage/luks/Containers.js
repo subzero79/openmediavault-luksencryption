@@ -1659,13 +1659,29 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             disabled: false
         },{
             id: me.getId() + "-crypttab",
-            xtype: "button",
+            xtype: "splitbutton",
             text: _("Crypttab"),
-            // icon: "images/padlock-open.svg",
             iconCls: "x-fa fa-key",
-            handler: Ext.Function.bind(me.onCrypttabButton, me, [ me ]),
-            scope: me,
-            disabled: true
+            disabled: false,
+            handler: function() {
+                this.showMenu();
+            },
+            menu: Ext.create("Ext.menu.Menu", {
+                items: [{
+                            id: "crypttab_add",
+                            text: _("Add"),
+                            value: "add",
+                            disabled: true,
+                            handler: Ext.Function.bind(me.onCrypttabButton, me, [ me ]),
+                            iconCls: "x-fa fa-plus",
+                        },{
+                            id: "crypttab_remove",
+                            text: _("Remove"),
+                            value: "remove",
+                            disabled: true,
+                            iconCls: "x-fa fa-minus",
+                        }]
+            })
         },{
             id: me.getId() + "-unlock",
             xtype: "button",
@@ -1739,6 +1755,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                 this.showMenu();
             },
             menu: Ext.create("Ext.menu.Menu", {
+                id: 'crypttab_splitbutton',
                 items: [{
                             text: _("Backup header"),
                             value: "backup",
@@ -1773,14 +1790,18 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
     onSelectionChange: function(model, records) {
         var me = this;
         me.callParent(arguments);
+        console.log(this.getTopToolbar());
         // Process additional buttons.
+        var crypttab_add = Ext.first('#crypttab_add');
+        var crypttab_remove = Ext.first('#crypttab_remove');
         var tbarBtnDisabled = {
             "delete": true,
             "unlock": true,
             "lock": true,
             "keys": true,
             "detail": true,
-            "header": true
+            "header": true,
+            "crypttab_add": true
         };
         if (records.length <= 0) {
             tbarBtnDisabled["delete"] = true;
@@ -1798,16 +1819,28 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             tbarBtnDisabled["keys"] = false;
             tbarBtnDisabled["detail"] = false;
             tbarBtnDisabled["header"] = false;
+
+            // enable the crypttab remove button if the device is registered
+            // but not unlocked
+            if (true === record.get("crypttab")) {
+              crypttab_remove.enable();
+            } else {
+              crypttab_remove.disable();
+            }
+
             // Disable/enable the unlock/lock buttons depending on whether
             // the selected device is open.
-            if (true === record.get("unlocked")) {
+            if (true === record.get("unlocked") ) {
                 tbarBtnDisabled["lock"] = false;
                 tbarBtnDisabled["delete"] = true;
-                tbarBtnDisabled['crypttab'] = false
+                // Enable the crypttab ADD button only for
+                // unlocked devices
+                crypttab_add.enable();
             } else {
                 tbarBtnDisabled["unlock"] = false;
                 tbarBtnDisabled["delete"] = false;
-                tbarBtnDisabled["crypttab"] = true;
+                crypttab_add.disable();
+
                 // Disable buttons if the device does not
                 // provide a UUID.
                 if(Ext.isEmpty(record.get("uuid"))) {
