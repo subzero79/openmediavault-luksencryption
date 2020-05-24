@@ -113,9 +113,21 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams($params, "rpc.common.getlist");
         // Enumerate all LUKS containers on the system.
+        $db = Database::getInstance();
+        // Get all stored crypttab entries from the database
+        $dataModelPath = "conf.system.storage.luks.device";
+        $crypttab_entries = $db->get($dataModelPath);
         $containers = $this->callMethod("enumerateContainers", NULL, $context);
         foreach($containers as $luksk => &$luksv) {
             $used = (!$luksv['unlocked']) ? NULL : FALSE;
+            $crypttab = FALSE;
+            // Iterate over all crypttab db entries to check if the device has an entry
+            foreach ($crypttab_entries as $entry) {
+              if ($entry->get('luksuuid') == $luksv['uuid']) {
+                $crypttab = TRUE;
+                break;
+              }
+            }
             // If open, does the container contain a filesystem and is it known
             // or used (i.e. a configured mntent, aka referenced in /etc/fstab)?
             if(!is_null($used)) {
@@ -125,6 +137,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 }
             }
             // null if locked, otherwise true if used, false if not
+            $luksv['crypttab'] = $crypttab;
             $luksv['_used'] = $used;
         }
         // Filter result.
@@ -562,7 +575,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         ];
         $object->setAssoc($data);
 
-        if ($object->isNew();) {
+        if ($object->isNew()) {
           $db->assertIsUnique($object, "luksuuid");
         }
 
