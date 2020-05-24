@@ -4,6 +4,7 @@ debian/openmediavault-luksencryption*.debhelper*
 debian/openmediavault-luksencryption*.substvars
 debian/files
 debian/tmp/
+.on-save.json
 .*.swp
 .*~
 *~

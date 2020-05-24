@@ -204,6 +204,10 @@
 	"params": {
 		"type": "object",
 		"properties": {
+			"uuid": {
+				"type": "string",
+				"format": "uuidv4"
+			},
 			"luksuuid": {
 				"type": "string",
 				"format": "uuidv4",
@@ -215,11 +219,10 @@
 				"required": true
 			},
 			"passphrase": {
-			    "type": "string",
-				"required": true
+			  "type": "string"
 			},
 			"devicemappername": {
-			    "type": "string",
+			  "type": "string",
 				"format": "devicefile",
 				"required": true
 			}

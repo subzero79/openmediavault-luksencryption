@@ -1,12 +1,12 @@
 {
 	"type": "config",
-	"id": "conf.system.storage.luks.devices",
+	"id": "conf.system.storage.luks.device",
 	"title": "Luks devices",
 	"queryinfo": {
-		"xpath": "//system/storage/luks/devices",
+		"xpath": "//system/storage/luks/device",
 		"iterable": true,
 		"idproperty": "uuid",
-		"refproperty": "devicefile"
+		"refproperty": "device"
 	},
 	"properties": {
 		"uuid": {

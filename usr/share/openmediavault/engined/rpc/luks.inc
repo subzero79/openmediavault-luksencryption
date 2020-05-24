@@ -311,9 +311,9 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * @return None.
      */
     private function mountContainerFS($deviceFile, $context) {
-        if (FALSE !== \OMV\Rpc\Rpc::call("FileSystemMgmt", "hasFilesystem", 
+        if (FALSE !== \OMV\Rpc\Rpc::call("FileSystemMgmt", "hasFilesystem",
                 [ "devicefile" => $deviceFile ], $context)) {
-            $meObject = \OMV\Rpc\Rpc::call("FsTab", "getByFsName", 
+            $meObject = \OMV\Rpc\Rpc::call("FsTab", "getByFsName",
                 [ "fsname" => $deviceFile ], $context);
             if (FALSE !== $meObject) {
                 switch (strtolower($meObject['type'])) {
@@ -502,7 +502,8 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * Create a crypttab entry in the database.
      * @param params An array containing the following fields:
      *     \em devicefile The device mapper file we are adding the entry to
-     *     \em decrypttedfilepath
+     *     \em devicemappername The decrypted device mapper name
+     *     \em luksuuid The LUKS unique identifier string
      *     \em keyfile Path to the uploaded key file to unlock the device.
      * @param context The context of the caller.
      * @return None.
@@ -517,7 +518,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         // // Validate the parameters of the RPC service method.
         // $this->validateMethodParams($params, "rpc.luks.setcrypttab");
         // Get the storage device object.
-        $dataModelPath = 'conf.system.storage.luks.devices';
+        $dataModelPath = 'conf.system.storage.luks.device';
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
         $luks = new \OMV\System\Storage\Luks\Container($params['devicefile']);
         if (is_null($luks) || !$luks->exists()) {
@@ -549,7 +550,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 }
             } else {
                 throw new \OMV\Exception(sprintf(gettext("Unable to save key file")));
-            } 
+            }
         }
 
         $db = Database::getInstance();
@@ -557,12 +558,15 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $data = [ "luksuuid"=>$params["uuid"],
                   "devicefile"=>$params["devicefile"],
                   "passphrase"=> $storedKey,
-                  "devicemappername"=>$dm_name 
+                  "devicemappername"=>$dm_name
         ];
         $object->setAssoc($data);
-        $object->set('devicefile', $params['devicefile']);
+
+        if ($object->isNew();) {
+          $db->assertIsUnique($object, "luksuuid");
+        }
+
         $db->set($object);
-        // print_r($object);
 
     }
 
