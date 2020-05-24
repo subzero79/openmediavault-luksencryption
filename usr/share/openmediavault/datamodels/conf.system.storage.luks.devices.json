@@ -1,14 +1,18 @@
 {
 	"type": "config",
-	"id": "conf.system.storage.luks.containers",
-	"title": "Luks device",
+	"id": "conf.system.storage.luks.devices",
+	"title": "Luks devices",
 	"queryinfo": {
-		"xpath": "//system/storage/luks/containers",
+		"xpath": "//system/storage/luks/devices",
 		"iterable": true,
-		"idproperty": "luksuuid",
+		"idproperty": "uuid",
 		"refproperty": "devicefile"
 	},
 	"properties": {
+		"uuid": {
+			"type": "string",
+			"format": "uuidv4"
+		},
 		"luksuuid": {
 			"type": "string",
 			"format": "uuidv4"

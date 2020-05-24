@@ -517,7 +517,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         // // Validate the parameters of the RPC service method.
         // $this->validateMethodParams($params, "rpc.luks.setcrypttab");
         // Get the storage device object.
-        $dataModelPath = 'conf.system.storage.luks.containers';
+        $dataModelPath = 'conf.system.storage.luks.devices';
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
         $luks = new \OMV\System\Storage\Luks\Container($params['devicefile']);
         if (is_null($luks) || !$luks->exists()) {
