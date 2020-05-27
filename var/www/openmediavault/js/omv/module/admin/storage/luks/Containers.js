@@ -1672,7 +1672,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                             text: _("Add"),
                             value: "add",
                             disabled: true,
-                            handler: Ext.Function.bind(me.onCrypttabButton, me, [ me ]),
+                            // handler: Ext.Function.bind(me.onCrypttabButton, me, [ me ]),
                             iconCls: "x-fa fa-plus",
                         },{
                             id: "crypttab_remove",
@@ -1680,7 +1680,13 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                             value: "remove",
                             disabled: true,
                             iconCls: "x-fa fa-minus",
-                        }]
+                        }],
+                listeners: {
+                    scope: me,
+                    click: function(menu, item, e, eOpts) {
+                        this.onCrypttabButton(item.value);
+                    }
+                }
             })
         },{
             id: me.getId() + "-unlock",
@@ -1790,7 +1796,6 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
     onSelectionChange: function(model, records) {
         var me = this;
         me.callParent(arguments);
-        console.log(this.getTopToolbar());
         // Process additional buttons.
         var crypttab_add = Ext.first('#crypttab_add');
         var crypttab_remove = Ext.first('#crypttab_remove');
@@ -1890,26 +1895,54 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
     },
 
 
-    onCrypttabButton: function() {
+    onCrypttabButton: function(action) {
         var me = this;
         var record = me.getSelected();
-        Ext.create("OMV.module.admin.storage.luks.container.Crypttab", {
-            title:      _("Register in crypttab"),
-            submitMsg:      _("Registering ..."),
-            okButtonText:   _("Register"),
-            rpcSetMethod:  "setCrypttab",
-            params: {
+        switch (action) {
+          case "add":
+            Ext.create("OMV.module.admin.storage.luks.container.Crypttab", {
+              title:      _("Register in crypttab"),
+              submitMsg:      _("Registering ..."),
+              okButtonText:   _("Register"),
+              rpcSetMethod:  "setCrypttab",
+              params: {
                 uuid: record.get("uuid"),
                 decrypteddevicefile: record.get("decrypteddevicefile"),
                 devicefile: record.get("devicefile")
-            },
-            listeners: [{
+              },
+              listeners: [{
                 scope: me,
                 submit: function() {
-                    this.doReload();
+                  this.doReload();
                 }
-            }]
-        }).show();
+              }]
+            }).show();
+          case "remove":
+            OMV.MessageBox.show({
+                title: _("Confirmation"),
+                msg: _("Delete the LUKS device from the crypttab?"),
+                buttons: Ext.Msg.YESNO,
+                fn: function(answer) {
+                    if(answer === "no")
+                        return;
+                    OMV.Rpc.request({
+                      scope: me,
+                      // callback: me.onDeletion,
+                      rpcData: {
+                          service: "LuksMgmt",
+                          method: "removeCrypttab",
+                          params: {
+                              luksuuid: record.get('uuid')
+                          }
+                      }
+                    });
+                },
+                scope: me,
+                icon: Ext.Msg.QUESTION
+              })
+            break;
+          default:
+        }
     },
 
     onUnlockButton: function() {
