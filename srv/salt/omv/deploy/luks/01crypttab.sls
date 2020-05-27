@@ -7,7 +7,7 @@
 create_crypttab_entry_{{ device.uuid }}:
   file.accumulated:
     - filename: "/etc/crypttab"
-    - text: "{{device.devicemappername}}\t{{device.devicefile}}\t{{device.passphrase}}\tnofail"
+    - text: "{{device.devicemappername}}\tUUID={{device.luksuuid}}\t{{device.passphrase}}\tnofail"
     - require_in:
       - file: append_crypttab_entries
 
