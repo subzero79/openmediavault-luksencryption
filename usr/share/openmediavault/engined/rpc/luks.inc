@@ -540,13 +540,9 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         }
         $test = $luks->testKey($params['keyfile'], TRUE);
         $open = $luks->isOpen();
-        if (FALSE != $open && FALSE != $test) {
-            # code...
-        }
         $key = $params['keyfile'];
         $dm_name = $luks->getDeviceMapperName();
         $unique_str = $luks->generateContainerString();
-        // $storedKey = "/etc/openmediavault/luks/LUKS_".$str.".key";
         $storedKey = "/etc/openmediavault/luks/LUKS_".$unique_str.".key";
         if (!copy($key, $storedKey) || !chmod($storedKey, 0400)) {
             if(file_exists($storedKey)) {
@@ -595,13 +591,9 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * @throw E_EXEC_MISC
      */
     public function removeCrypttab($params, $context) {
-      // code...
-        // 
       $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
       $dataModelPath = 'conf.system.storage.luks.device';
       $db = Database::getInstance();
-      // $crypttab = $db->get($dataModelPath);
-      // print_r($params);
       $crypttab_entries = $db->getByFilter( 
             $dataModelPath, [ 
                 "operator" => "stringEquals",
@@ -612,9 +604,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
       if (count($crypttab_entries) == 1)  {
         $db->delete($crypttab_entries[0]);
       }
-      //
-      // test12
-      // test1
+
 
 
     }
