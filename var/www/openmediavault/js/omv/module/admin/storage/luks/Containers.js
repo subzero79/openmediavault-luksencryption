@@ -1898,6 +1898,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
     onCrypttabButton: function(action) {
         var me = this;
         var record = me.getSelected();
+        console.log(record);
         switch (action) {
           case "add":
             Ext.create("OMV.module.admin.storage.luks.container.Crypttab", {
@@ -1932,7 +1933,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                           service: "LuksMgmt",
                           method: "removeCrypttab",
                           params: {
-                              luksuuid: record.get('uuid')
+                              luksuuid: record.get("uuid")
                           }
                       }
                     });

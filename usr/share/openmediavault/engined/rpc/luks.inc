@@ -48,6 +48,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $this->registerMethod("getContainerDetails");
         $this->registerMethod("createContainer");
         $this->registerMethod("setCrypttab");
+        $this->registerMethod("removeCrypttab");
         $this->registerMethod("deleteContainer");
         $this->registerMethod("modifyContainer");
         $this->registerMethod("openContainer");
@@ -528,8 +529,6 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
     public function setCrypttab($params, $context) {
         // Validate the RPC caller context.
         $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
-        // // Validate the parameters of the RPC service method.
-        // $this->validateMethodParams($params, "rpc.luks.setcrypttab");
         // Get the storage device object.
         $dataModelPath = 'conf.system.storage.luks.device';
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
@@ -580,6 +579,43 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         }
 
         $db->set($object);
+
+    }
+
+
+    /**
+     * Remove a crypttab entry in the database.
+     * @param params An array containing the following fields:
+     *     \em luksuuid The LUKS unique identifier string
+     * @param context The context of the caller.
+     * @return None.
+     * @throw E_MISC_DEVICE_NOT_FOUND
+     * @throw E_MISC_FAILURE
+     * @throw E_EXEC_FAILED
+     * @throw E_EXEC_MISC
+     */
+    public function removeCrypttab($params, $context) {
+      // code...
+        // 
+      $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+      $dataModelPath = 'conf.system.storage.luks.device';
+      $db = Database::getInstance();
+      // $crypttab = $db->get($dataModelPath);
+      // print_r($params);
+      $crypttab_entries = $db->getByFilter( 
+            $dataModelPath, [ 
+                "operator" => "stringEquals",
+                "arg0" => "luksuuid",
+                "arg1" => $params['luksuuid']
+            ]
+        );
+      if (count($crypttab_entries) == 1)  {
+        $db->delete($crypttab_entries[0]);
+      }
+      //
+      // test12
+      // test1
+
 
     }
 
