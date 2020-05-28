@@ -66,5 +66,9 @@
             OMV_NOTIFY_MODIFY,
             "org.openmediavault.conf.system.notification.notification",
             [ $this, "setDirty" ]);
+        $dispatcher->addListener(
+            OMV_NOTIFY_CREATE | OMV_NOTIFY_MODIFY | OMV_NOTIFY_DELETE,
+            "org.openmediavault.conf.system.storage.luks.device",
+            [ $this, "setDirty" ]);
     }
 }

@@ -575,7 +575,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         }
 
         $db->set($object);
-
+        return $object->getAssoc();
     }
 
 
@@ -591,19 +591,18 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * @throw E_EXEC_MISC
      */
     public function removeCrypttab($params, $context) {
-      $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
-      $dataModelPath = 'conf.system.storage.luks.device';
-      $db = Database::getInstance();
-      $crypttab_entries = $db->getByFilter( 
-            $dataModelPath, [ 
-                "operator" => "stringEquals",
-                "arg0" => "luksuuid",
-                "arg1" => $params['luksuuid']
-            ]
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        $db = Database::getInstance();
+        $object = $db->getByFilter(
+                "conf.system.storage.luks.device", 
+                [ 
+                    "operator" => "stringEquals",
+                    "arg0" => "luksuuid",
+                    "arg1" => $params['luksuuid']
+                ],
+                "1"
         );
-      if (count($crypttab_entries) == 1)  {
-        $db->delete($crypttab_entries[0]);
-      }
+        $db->delete($object);
 
 
 
