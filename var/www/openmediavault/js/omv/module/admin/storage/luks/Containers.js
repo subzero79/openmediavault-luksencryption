@@ -1895,6 +1895,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
     },
 
 
+
     onCrypttabButton: function(action) {
         var me = this;
         var record = me.getSelected();
@@ -1918,6 +1919,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                 }
               }]
             }).show();
+            break;
           case "remove":
             OMV.MessageBox.show({
                 title: _("Confirmation"),
