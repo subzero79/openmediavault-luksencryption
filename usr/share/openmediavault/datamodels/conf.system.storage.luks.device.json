@@ -21,7 +21,7 @@
 			"type": "string",
 			"format": "devicefile"
 		},
-		"passphrase": {
+		"keyfile": {
 			"type": "string"
 		},
 		"devicemappername": {
