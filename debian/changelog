@@ -1,3 +1,10 @@
+openmediavault-luksencryption (5.0.2) stable; urgency=low
+
+  * Fix mount on unlock
+  * Register LUKS backend
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Sat, 30 May 2020 08:00:06 -0500
+
 openmediavault-luksencryption (5.0.1) stable; urgency=low
 
   * Fix the display of number of slots used
