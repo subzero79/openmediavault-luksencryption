@@ -1807,7 +1807,6 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             "keys": true,
             "detail": true,
             "header": true,
-            "crypttab_add": true
         };
         if (records.length <= 0) {
             tbarBtnDisabled["delete"] = true;
@@ -1826,13 +1825,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
             tbarBtnDisabled["detail"] = false;
             tbarBtnDisabled["header"] = false;
 
-            // enable the crypttab remove button if the device is registered
-            // but not unlocked
-            if (true === record.get("crypttab")) {
-              crypttab_remove.enable();
-            } else {
-              crypttab_remove.disable();
-            }
+
 
             // Disable/enable the unlock/lock buttons depending on whether
             // the selected device is open.
@@ -1841,12 +1834,24 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
                 tbarBtnDisabled["delete"] = true;
                 // Enable the crypttab ADD button only for
                 // unlocked devices
-                crypttab_add.enable();
+                // enable the crypttab remove button if the device is registered
+                // but not unlocked
+                if (true === record.get("crypttab")) {
+                  crypttab_add.disable();
+                  crypttab_remove.enable();
+                } else {
+                  crypttab_remove.disable();
+                  crypttab_add.enable();
+                }
             } else {
                 tbarBtnDisabled["unlock"] = false;
                 tbarBtnDisabled["delete"] = false;
                 crypttab_add.disable();
-
+                if (true === record.get("crypttab")) {
+                  crypttab_remove.enable();
+                } else {
+                  crypttab_remove.disable();
+              }
                 // Disable buttons if the device does not
                 // provide a UUID.
                 if(Ext.isEmpty(record.get("uuid"))) {
