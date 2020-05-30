@@ -533,41 +533,51 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         $dataModelPath = 'conf.system.storage.luks.device';
         $sd = \OMV\System\Storage\StorageDevice::getStorageDevice($params['devicefile']);
         $luks = new \OMV\System\Storage\Luks\Container($params['devicefile']);
+        
         if (is_null($luks) || !$luks->exists()) {
             throw new \OMV\Exception(
                 sprintf(gettext("LUKS container on '%s' not found"),
                         $params['devicefile']));
         }
-        $test = $luks->testKey($params['keyfile'], TRUE);
+
         $open = $luks->isOpen();
-        $key = $params['keyfile'];
         $dm_name = $luks->getDeviceMapperName();
-        $unique_str = $luks->generateContainerString();
-        $storedKey = "/etc/openmediavault/luks/LUKS_".$unique_str.".key";
-        if (!copy($key, $storedKey) || !chmod($storedKey, 0400)) {
-            if(file_exists($storedKey)) {
-                // secure cleanup
-                $cmd = sprintf("export LANG=C; shred -u %s ",
-                                escapeshellarg($storedKey));
-                if (0 !== $this->exec($cmd, $output)) {
-                    throw new \OMV\Exception($cmd . implode("\n", $output));
+        $key = $params['keyfile'];
+        // Keyfile supplied, test it and store it in the root filesystem
+        if (isset($key)) {
+            $luks->testKey($key, TRUE);
+            $unique_str = $luks->generateContainerString();
+            $storedKey = "/etc/openmediavault/luks/LUKS_".$unique_str.".key";
+            if (!copy($key, $storedKey) || !chmod($storedKey, 0400)) {
+                if(file_exists($storedKey)) {
+                    // secure cleanup
+                    $cmd = sprintf("export LANG=C; shred -u %s ",
+                                    escapeshellarg($storedKey));
+                    if (0 !== $this->exec($cmd, $output)) {
+                        throw new \OMV\Exception($cmd . implode("\n", $output));
+                    } else {
+                        $this->debug($output);
+                        // fall back to PHP deletion
+                        unlink($storedKey);
+                    }
                 } else {
-                    $this->debug($output);
-                    // fall back to PHP deletion
-                    unlink($storedKey);
+                    throw new \OMV\Exception(sprintf(gettext("Unable to save key file")));
                 }
-            } else {
-                throw new \OMV\Exception(sprintf(gettext("Unable to save key file")));
             }
+        } else {
+            // No keyfile supplied, user will be prompt at boot for passphrase
+            $storedKey = "-";
         }
+
 
         $db = Database::getInstance();
         $object = new ConfigObject($dataModelPath);
         $data = [ "luksuuid"=>$params["uuid"],
                   "devicefile"=>$params["devicefile"],
-                  "passphrase"=> $storedKey,
+                  "keyfile"=> $storedKey,
                   "devicemappername"=>$dm_name
         ];
+
         $object->setAssoc($data);
 
         if ($object->isNew()) {
