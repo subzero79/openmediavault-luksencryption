@@ -446,7 +446,8 @@ Ext.define("OMV.module.admin.storage.luks.container.Crypttab", {
         var params = me.callParent(arguments);
         return Ext.apply(params, {
             uuid: me.params.uuid,
-            decrypteddevicefile: me.params.decrypteddevicefile
+            decrypteddevicefile: me.params.decrypteddevicefile,
+            devicefile: me.params.devicefile
         });
     },
 
@@ -461,10 +462,10 @@ Ext.define("OMV.module.admin.storage.luks.container.Crypttab", {
         // What kind of key are we using, key file or passphrase?
         if(me.fp.findField("keyfile").value) {
             me.doUpload();
-        } //else {
-        //     me.fp.findField("MAX_FILE_SIZE").submitValue = false;
-        //     me.callParent(arguments);
-        // }
+        } else {
+            me.fp.findField("MAX_FILE_SIZE").submitValue = false;
+            me.callParent(arguments);
+        }
     },
 
     doUpload: function() {
