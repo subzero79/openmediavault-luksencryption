@@ -616,9 +616,24 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
                 ],
                 "1"
         );
+
+        $data = $object->getAssoc();
+        $key = $data["keyfile"];
+        // Proceed to delete the key stored in filesystem
+        if ( file_exists($key) && isset($key) ) {
+            // secure cleanup
+            $cmd = sprintf("export LANG=C; shred -u %s ",
+                            escapeshellarg($key));
+            if (0 !== $this->exec($cmd, $output)) {
+                throw new \OMV\Exception($cmd . implode("\n", $output));
+            } else {
+                $this->debug($output);
+                // fall back to PHP deletion
+                unlink($key);
+            }
+        }
+        // Delete the object from the database
         $db->delete($object);
-
-
 
     }
 
