@@ -28,6 +28,8 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
 
     private $mountOnUnlock = TRUE;
 
+    private $crypttabKeyFolder = "/etc/openmediavault/luks";
+
     /**
      * Get the RPC service name.
      */
@@ -39,8 +41,10 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
      * Initialize the RPC service.
      */
     public function initialize() {
-        if(isset($GLOBALS['OMV_LUKS_MOUNT_ON_UNLOCK']))
-            $this->mountOnUnlock = boolvalEx($GLOBALS['OMV_LUKS_MOUNT_ON_UNLOCK']);
+        if(isset($GLOBALS["OMV_LUKS_MOUNT_ON_UNLOCK"]))
+            $this->mountOnUnlock = boolvalEx($GLOBALS["OMV_LUKS_MOUNT_ON_UNLOCK"]);
+        if(isset($GLOBALS["OMV_LUKS_CRYPTTAB_KEY_FOLDER"]))
+            $this->crypttabKeyFolder = $GLOBALS["OMV_LUKS_CRYPTTAB_KEY_FOLDER"];
 
         $this->registerMethod("enumerateContainers");
         $this->registerMethod("getContainersList");
@@ -547,7 +551,7 @@ class OMVRpcServiceLuksMgmt extends \OMV\Rpc\ServiceAbstract {
         if (isset($key)) {
             $luks->testKey($key, TRUE);
             $unique_str = $luks->generateContainerString();
-            $storedKey = "/etc/openmediavault/luks/LUKS_".$unique_str.".key";
+            $storedKey = $this->crypttabKeyFolder."/LUKS_".$unique_str.".key";
             if (!copy($key, $storedKey) || !chmod($storedKey, 0400)) {
                 if(file_exists($storedKey)) {
                     // secure cleanup
