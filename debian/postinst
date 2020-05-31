@@ -16,6 +16,10 @@ case "$1" in
             omv_config_add_node_data "${XPATH}" "notification" "${object}"
         fi
 
+        if [ ! -d "/etc/openmediavault/luks" ]; then
+            mkdir "/etc/openmediavault/luks"
+        fi
+
         # Activate package triggers. These triggers are only set during the
         # package installation.
         dpkg-trigger update-fixperms
